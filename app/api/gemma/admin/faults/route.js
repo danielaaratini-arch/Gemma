@@ -3,17 +3,17 @@ import { requireRole } from "../../../../../lib/gemma-auth";
 
 export const runtime = "nodejs";
 
-function auth(request) {
-  return requireRole(request, ["ADMIN"]);
+async function auth(request) {
+  return await requireRole(request, ["ADMIN"]);
 }
 
 export async function GET(request) {
-  if (!auth(request)) return Response.json({ error: "Non autorizzato." }, { status: 401 });
+  if (!(await auth(request))) return Response.json({ error: "Non autorizzato." }, { status: 401 });
   return Response.json({ faults: await listFaults() });
 }
 
 export async function POST(request) {
-  if (!auth(request)) return Response.json({ error: "Non autorizzato." }, { status: 401 });
+  if (!(await auth(request))) return Response.json({ error: "Non autorizzato." }, { status: 401 });
   try {
     const body = await request.json();
     const fault = await saveFault(body || {});
@@ -27,7 +27,7 @@ export async function POST(request) {
 }
 
 export async function PATCH(request) {
-  if (!auth(request)) return Response.json({ error: "Non autorizzato." }, { status: 401 });
+  if (!(await auth(request))) return Response.json({ error: "Non autorizzato." }, { status: 401 });
   try {
     const body = await request.json();
     const fault = await saveFault(body || {});
@@ -41,7 +41,7 @@ export async function PATCH(request) {
 }
 
 export async function DELETE(request) {
-  if (!auth(request)) return Response.json({ error: "Non autorizzato." }, { status: 401 });
+  if (!(await auth(request))) return Response.json({ error: "Non autorizzato." }, { status: 401 });
   const body = await request.json();
   const ok = await deleteFault(String(body?.id || ""));
   return ok
