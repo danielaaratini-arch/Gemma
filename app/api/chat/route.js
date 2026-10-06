@@ -111,10 +111,39 @@ function retrievalContext(messages, state) {
 }
 
 function knowledgeServiceHint(state) {
-  if (state?.department === "MOBILE_TECHNICAL") return "MOBILE";
-  if (state?.department === "FIXED_TECHNICAL") return "FIXED";
-  if (state?.service === "MOBILE") return "MOBILE";
-  if (state?.service === "FIXED") return "FIXED";
+  const department = String(state?.department || "").toUpperCase();
+  const service = String(state?.service || "").toUpperCase();
+
+  if (department === "MOBILE_TECHNICAL") return "MOBILE";
+  if (department === "FIXED_TECHNICAL") return "FIXED";
+  if (department === "EMAIL") return "EMAIL";
+  if (department === "PEC") return "PEC";
+  if (
+    department === "ADMINISTRATIVE" ||
+    department === "BILLING"
+  ) {
+    return "ADMINISTRATIVE";
+  }
+  if (
+    department === "COMMERCIAL" ||
+    department === "VENDITE"
+  ) {
+    return "COMMERCIAL";
+  }
+
+  if (
+    [
+      "MOBILE",
+      "FIXED",
+      "EMAIL",
+      "PEC",
+      "ADMINISTRATIVE",
+      "COMMERCIAL",
+    ].includes(service)
+  ) {
+    return service;
+  }
+
   return null;
 }
 
