@@ -129,6 +129,43 @@ if (!chatRoute.includes("retrieveGemmaOperationalContext")) {
   failures.push("Alert e Customer Memory non sono integrati nel contesto Gemma.");
 }
 
+const knowledgeSyncRequired = [
+  "lib/gemma-knowledge-sync.js",
+  "lib/gemma-no-match.js",
+  "app/api/gemma/admin/knowledge-sync/route.js",
+  "app/api/gemma/admin/no-match/route.js",
+  "app/admin/no-match/page.js",
+];
+
+for (const path of knowledgeSyncRequired) {
+  if (!fs.existsSync(path)) {
+    failures.push("Funzione Knowledge Gemma mancante: " + path);
+  }
+}
+
+if (fs.existsSync("lib/gemma-knowledge-sync.js")) {
+  const sync = read("lib/gemma-knowledge-sync.js");
+  for (const token of [
+    "startKnowledgePreview",
+    "stepKnowledgePreview",
+    "startKnowledgeApply",
+    "stepKnowledgeApply",
+    "stepKnowledgeRollback",
+    "knowledge_snapshot",
+  ]) {
+    if (!sync.includes(token)) {
+      failures.push("Knowledge sync incompleto: " + token);
+    }
+  }
+}
+
+if (fs.existsSync("lib/gemma-no-match.js")) {
+  const noMatch = read("lib/gemma-no-match.js");
+  if (!noMatch.includes("knowledgeHits")) {
+    failures.push("No Match Gemma non è definito da knowledgeHits = 0.");
+  }
+}
+
 if (failures.length) {
   console.error(failures.join("\n"));
   process.exit(1);
