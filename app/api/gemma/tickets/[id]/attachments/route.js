@@ -1,7 +1,7 @@
 import {
   addTicketAttachments,
   customerCookie,
-  customerKeyFromRequest,
+  customerContextFromRequest,
 } from "../../../../../../lib/gemma-store";
 import {
   MAX_FILES_PER_UPLOAD,
@@ -23,7 +23,13 @@ export async function POST(request, context) {
       return Response.json({ error: "Non autorizzato." }, { status: 401 });
     }
 
-    const session = customerKeyFromRequest(request);
+    const session = await customerContextFromRequest(request);
+    if (session.invalid) {
+      return Response.json(
+        { error: "Sessione cliente non valida. Accedi di nuovo." },
+        { status: 401 },
+      );
+    }
     const formData = await request.formData();
     const files = formData.getAll("files").filter((item) => item instanceof File);
 
