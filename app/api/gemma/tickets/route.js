@@ -106,6 +106,10 @@ export async function POST(request) {
       customerKey: session.key,
       customerName:
         body?.customerName || session.user?.name || "Cliente",
+      customerCode:
+        body?.customerCode || session.user?.customerCode || undefined,
+      serviceNumber:
+        body?.serviceNumber || session.user?.serviceNumber || undefined,
       requestKey:
         typeof body?.requestKey === "string"
           ? body.requestKey
@@ -115,6 +119,11 @@ export async function POST(request) {
         body.notificationEmail.trim()
           ? body.notificationEmail
           : session.user?.email || undefined,
+      notificationEmailVerified:
+        session.user?.emailVerified === true &&
+        (!body?.notificationEmail ||
+          String(body.notificationEmail).trim().toLowerCase() ===
+            String(session.user?.email || "").trim().toLowerCase()),
     });
 
     if (ticket) {
