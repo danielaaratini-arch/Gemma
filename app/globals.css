@@ -636,3 +636,34 @@ button,input{font:inherit}button{cursor:pointer}
   font-size:10px;
   line-height:1.45;
 }
+
+
+.knowledgeProposalDiff{margin-top:6px}
+.knowledgeProposalDiff summary{
+  cursor:pointer;
+  color:#047857;
+  font-size:9px;
+  font-weight:800;
+}
+.knowledgeProposalDiff>div{
+  margin-top:6px;
+  border:1px solid #e2e8f0;
+  border-radius:9px;
+  background:#f8fafc;
+  padding:7px;
+}
+.knowledgeProposalDiff b{
+  color:#64748b;
+  font-size:8px;
+  text-transform:uppercase;
+}
+.knowledgeProposalDiff pre{
+  max-height:150px;
+  margin:4px 0 0;
+  overflow:auto;
+  white-space:pre-wrap;
+  color:#334155;
+  font:inherit;
+  font-size:8px;
+  line-height:1.4;
+}
