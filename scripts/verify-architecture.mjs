@@ -202,7 +202,7 @@ if (!store.includes("Gemma non ha ancora determinato il reparto corretto")) {
   failures.push("I ticket senza reparto possono ancora entrare nel backoffice.");
 }
 
-if (!chat.includes("trattala come un nuovo caso")) {
+if (!chat.includes("azzera fatti, verifiche, pending, outcome, resolved e ticketRecommended")) {
   failures.push("Cambio argomento Gemma senza reset esplicito del caso precedente.");
 }
 
