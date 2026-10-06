@@ -613,3 +613,26 @@ button,input{font:inherit}button{cursor:pointer}
     grid-template-columns:minmax(220px,1.8fr) 120px 120px 85px 50px 120px;
   }
 }
+
+
+.ticketOfferSummary{
+  margin-top:8px;
+  border-top:1px solid #e2e8f0;
+  padding-top:7px;
+}
+.ticketOfferSummary summary{
+  cursor:pointer;
+  color:#047857;
+  font-size:10px;
+  font-weight:800;
+}
+.ticketOfferSummary pre{
+  max-height:180px;
+  margin:7px 0 0;
+  overflow:auto;
+  white-space:pre-wrap;
+  color:#475569;
+  font:inherit;
+  font-size:10px;
+  line-height:1.45;
+}
