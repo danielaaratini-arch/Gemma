@@ -82,6 +82,131 @@ function KnowledgeBody({ user, logout }) {
     );
   }, []);
 
+  function resetManualForm() {
+    setManualEditId(null);
+    setManualForm({
+      title: noMatchHint ? noMatchHint.slice(0, 180) : "",
+      description: "",
+      content: "",
+      category: "GENERAL",
+      serviceType: "",
+      assistanceArea: "",
+      topic: "",
+      usageHints: noMatchHint ? noMatchHint.slice(0, 1000) : "",
+      deviceScope: "",
+      status: "DRAFT",
+    });
+  }
+
+  async function saveManualDocument(event) {
+    event.preventDefault();
+    if (busy) return;
+
+    setBusy("manual");
+    setError("");
+
+    try {
+      const url = manualEditId
+        ? "/api/gemma/admin/knowledge/" + manualEditId
+        : "/api/gemma/admin/knowledge";
+      const response = await fetch(url, {
+        method: manualEditId ? "PATCH" : "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(manualForm),
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data?.error || "Documento Knowledge non salvato.");
+      }
+
+      resetManualForm();
+      setManualOpen(false);
+      await loadDocuments();
+    } catch (caught) {
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : "Documento Knowledge non salvato.",
+      );
+    } finally {
+      setBusy("");
+    }
+  }
+
+  async function editKnowledgeDocument(id) {
+    setBusy("manual-load");
+    setError("");
+
+    try {
+      const response = await fetch(
+        "/api/gemma/admin/knowledge/" + id,
+        { cache: "no-store" },
+      );
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data?.error || "Documento Knowledge non disponibile.");
+      }
+
+      const item = data.document;
+      setManualEditId(item.id);
+      setManualForm({
+        title: item.title || "",
+        description: item.description || "",
+        content: item.content || "",
+        category: item.category || "GENERAL",
+        serviceType: item.service_type || "",
+        assistanceArea: item.assistance_area || "",
+        topic: item.topic || "",
+        usageHints: item.usage_hints || "",
+        deviceScope: item.device_scope || "",
+        status: item.status || "DRAFT",
+      });
+      setManualOpen(true);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } catch (caught) {
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : "Documento Knowledge non disponibile.",
+      );
+    } finally {
+      setBusy("");
+    }
+  }
+
+  async function setKnowledgeStatus(id, status) {
+    setBusy("status");
+    setError("");
+
+    try {
+      const response = await fetch(
+        "/api/gemma/admin/knowledge/" + id,
+        {
+          method: "PATCH",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ status }),
+        },
+      );
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data?.error || "Stato Knowledge non aggiornato.");
+      }
+
+      await loadDocuments();
+    } catch (caught) {
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : "Stato Knowledge non aggiornato.",
+      );
+    } finally {
+      setBusy("");
+    }
+  }
+
   async function syncRequest(payload) {
     const response = await fetch("/api/gemma/admin/knowledge-sync", {
       method: "POST",
