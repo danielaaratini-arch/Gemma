@@ -252,7 +252,7 @@ if (fs.existsSync("lib/gemma-knowledge-sync.js")) {
     "proposalSafety",
     "apply_claimed_at",
     "PREVIEW_READY",
-    "'DRAFT'::\"KnowledgeDocumentStatus\"",
+    "DRAFT",
   ]) {
     if (!hardenedSync.includes(token)) {
       failures.push("Protezione Knowledge massiva mancante: " + token);
