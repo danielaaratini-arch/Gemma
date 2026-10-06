@@ -104,15 +104,17 @@ export async function POST(request) {
     const ticket = await createTicket({
       conversationId,
       customerKey: session.key,
-      customerName: body?.customerName,
+      customerName:
+        body?.customerName || session.user?.name || "Cliente",
       requestKey:
         typeof body?.requestKey === "string"
           ? body.requestKey
           : undefined,
       notificationEmail:
-        typeof body?.notificationEmail === "string"
+        typeof body?.notificationEmail === "string" &&
+        body.notificationEmail.trim()
           ? body.notificationEmail
-          : undefined,
+          : session.user?.email || undefined,
     });
 
     if (ticket) {
