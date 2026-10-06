@@ -2,8 +2,8 @@ import {
   removePushSubscription,
   savePushSubscription,
   webPushPublicConfig,
-} from "../../../../../lib/gemma-push";
-import { activeAuthSession, userCustomerKey } from "../../../../../lib/gemma-auth";
+} from "../../../../lib/gemma-push";
+import { activeAuthSession, userCustomerKey } from "../../../../lib/gemma-auth";
 
 export const runtime = "nodejs";
 

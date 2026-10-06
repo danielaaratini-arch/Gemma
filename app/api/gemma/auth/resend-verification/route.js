@@ -2,8 +2,8 @@ import { after } from "next/server";
 import {
   activeAuthSession,
   issueEmailVerification,
-} from "../../../../../../lib/gemma-auth";
-import { sendEmailVerification } from "../../../../../../lib/gemma-notifications";
+} from "../../../../../lib/gemma-auth";
+import { sendEmailVerification } from "../../../../../lib/gemma-notifications";
 
 export const runtime = "nodejs";
 

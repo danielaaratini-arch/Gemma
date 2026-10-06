@@ -1,4 +1,5 @@
 import fs from "node:fs";
+import path from "node:path";
 
 const read = (path) => fs.readFileSync(path, "utf8");
 const knowledge = read("lib/knowledge.js");
@@ -67,6 +68,7 @@ const dbModule = read("lib/db.js");
 const storeModule = read("lib/gemma-store.js");
 const ticketRoute = read("app/api/gemma/tickets/route.js");
 const ticketDetailRoute = read("app/api/gemma/tickets/[id]/route.js");
+const ticketMessageRoute = read("app/api/gemma/tickets/[id]/messages/route.js");
 
 if (!dbModule.includes("GEMMA_DB_READ_POOL") || !dbModule.includes("GEMMA_DB_WRITE_POOL")) {
   failures.push("Manca la separazione dei pool DB Gemma.");
@@ -300,6 +302,10 @@ if (!ticketDetailRoute.includes("notifyCustomerTicketStatus")) {
   failures.push("I cambi stato ticket non inviano la push al cliente.");
 }
 
+if (!ticketMessageRoute.includes("notifyCustomerTicketStatus")) {
+  failures.push("I cambi stato tramite risposta Backoffice non inviano la push al cliente.");
+}
+
 if (!read("package.json").includes('"web-push"')) {
   failures.push("Dipendenza Web Push standard mancante.");
 }
@@ -396,6 +402,95 @@ if (read("components/GemmaInternalNav.js").includes("AI Router")) {
 
 if (read("components/GemmaInternalNav.js").includes('"/admin/memory"')) {
   failures.push("Customer Memory tecnica ancora esposta nel menu Admin.");
+}
+
+if (!store.includes("customerContextFromRequest") ||
+    !chat.includes("await customerContextFromRequest(request)")) {
+  failures.push("Le API cliente non validano l'account attivo sul database.");
+}
+
+if (!read("lib/gemma-knowledge-sync.js").includes("fetchImportedKnowledgePage") ||
+    read("lib/gemma-knowledge-sync.js").includes("async function fetchPage(urlValue)")) {
+  failures.push("Knowledge Sync non usa esclusivamente il fetch maturo Lia/Alda.");
+}
+
+if (!read("lib/gemma-auth.js").includes("customerCode: user.customer_code") ||
+    !read("lib/gemma-auth.js").includes("serviceNumber: user.service_number")) {
+  failures.push("La registrazione cliente non normalizza i dati strutturati.");
+}
+
+const sourceRoots = ["app", "components", "lib", "scripts"];
+const sourceFiles = [];
+
+function collectSourceFiles(directory) {
+  if (!fs.existsSync(directory)) return;
+
+  for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
+    const target = path.join(directory, entry.name);
+    if (entry.isDirectory()) {
+      collectSourceFiles(target);
+    } else if (/\.(?:js|mjs)$/.test(entry.name)) {
+      sourceFiles.push(target);
+    }
+  }
+}
+
+for (const root of sourceRoots) collectSourceFiles(root);
+
+for (const sourceFile of sourceFiles) {
+  const source = read(sourceFile);
+  const relativeImports = [
+    ...source.matchAll(/(?:from\s+|import\()["']([^"']+)["']/g),
+  ]
+    .map((match) => match[1])
+    .filter((specifier) => specifier.startsWith("."));
+
+  for (const specifier of relativeImports) {
+    const target = path.resolve(path.dirname(sourceFile), specifier);
+    const relativeToProject = path.relative(process.cwd(), target);
+
+    if (
+      relativeToProject.startsWith("..") ||
+      path.isAbsolute(relativeToProject)
+    ) {
+      failures.push(
+        "Import relativo fuori progetto: " + sourceFile + " -> " + specifier,
+      );
+      continue;
+    }
+
+    const candidates = [
+      target,
+      target + ".js",
+      target + ".mjs",
+      path.join(target, "index.js"),
+      path.join(target, "index.mjs"),
+    ];
+
+    if (!candidates.some((candidate) => fs.existsSync(candidate))) {
+      failures.push(
+        "Import relativo non risolto: " + sourceFile + " -> " + specifier,
+      );
+    }
+  }
+}
+
+const noMatchModule = read("lib/gemma-no-match.js");
+if (
+  !noMatchModule.includes("m.metadata_json ? 'knowledgeHits'") ||
+  !noMatchModule.includes("knowledgeMode")
+) {
+  failures.push(
+    "No Match può ancora includere messaggi legacy o errori retrieval.",
+  );
+}
+
+if (
+  !store.includes("ticket_service_number") ||
+  !store.includes("ticket_email_verified") ||
+  !store.includes("user_service_number")
+) {
+  failures.push("Il controllo schema production non verifica tutti i dati cliente.");
 }
 
 if (failures.length) {

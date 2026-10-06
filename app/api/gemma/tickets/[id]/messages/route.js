@@ -8,6 +8,7 @@ import {
 } from "../../../../../../lib/gemma-store";
 import { requireRole } from "../../../../../../lib/gemma-auth";
 import { notifyTicketStatusChanged } from "../../../../../../lib/gemma-notifications";
+import { notifyCustomerTicketStatus } from "../../../../../../lib/gemma-push";
 
 export const runtime = "nodejs";
 
@@ -65,7 +66,12 @@ export async function POST(request, context) {
         );
 
         if (ticket && before.status !== ticket.status) {
-          after(() => notifyTicketStatusChanged(ticket, before.status));
+          after(() =>
+            Promise.allSettled([
+              notifyTicketStatusChanged(ticket, before.status),
+              notifyCustomerTicketStatus(ticket, before.status),
+            ]),
+          );
         }
       }
 

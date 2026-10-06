@@ -1,4 +1,4 @@
-import { verifyCustomerEmailToken } from "../../../../../../lib/gemma-auth";
+import { verifyCustomerEmailToken } from "../../../../../lib/gemma-auth";
 
 export const runtime = "nodejs";
 
