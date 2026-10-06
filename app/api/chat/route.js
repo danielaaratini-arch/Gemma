@@ -1,31 +1,59 @@
 import OpenAI from "openai";
 import { retrieveKnowledge, supportText } from "../../../lib/knowledge";
+import {
+  createConversation,
+  customerCookie,
+  customerKeyFromRequest,
+  getConversation,
+  saveConversationTurn,
+} from "../../../lib/gemma-store";
+import {
+  emptyGemmaState,
+  normalizeGemmaState,
+  publicTicketState,
+} from "../../../lib/gemma-summary";
 
 export const runtime = "nodejs";
+
+const STATE_MARKER = "<<GEMMA_STATE>>";
 
 const SYSTEM = `Sei Gemma, assistente conversazionale Tiscali.
 
 Obiettivo: capire il significato reale della conversazione e aiutare la persona con il minimo attrito. Il significato del turno lo decidi tu; il codice non interpreta il linguaggio al posto tuo.
 
 REGOLE DI CONVERSAZIONE
-1. Considera Tiscali il contesto del servizio, salvo che la persona dica esplicitamente il contrario. Non chiedere "la SIM è Tiscali?" o domande equivalenti senza un motivo concreto.
-2. Usa tutta la conversazione recente. Non chiedere di nuovo informazioni già fornite. Se la persona corregge un fatto, usa il valore corretto da quel momento in poi.
-3. Se la persona fa una domanda di chiarimento mentre stai seguendo un problema, rispondi prima al chiarimento in modo breve e comprensibile. Poi riprendi esplicitamente il punto rimasto in sospeso con UNA sola domanda o UN solo controllo.
-4. Nel troubleshooting proponi un solo passo alla volta. Un passo deve essere una sola azione o una sola osservazione richiesta alla persona. Non mettere nello stesso turno una sequenza come "apri, modifica, salva, verifica": dai il primo passo, aspetta l'esito e solo dopo continua.
-5. Non confondere una risposta a una domanda informativa con l'esito di un controllo tecnico. "Sì", "no", una correzione o una spiegazione non significano automaticamente "problema risolto".
-6. Chiedi marca/modello del dispositivo soltanto quando servono davvero per una guida o un'impostazione specifica. Se per proseguire servirebbe un percorso di menu che cambia tra produttori o modelli, chiedi prima marca e modello invece di inventare un percorso Android generico. Se tecnologia, dispositivo o altro dato sono già noti, non richiederli.
-7. Se cambia argomento, segui il nuovo argomento senza trascinare artificialmente la procedura precedente. Se poi torna indietro, usa il contesto disponibile.
-
-REGOLE DI ATTENDIBILITÀ
+1. Considera Tiscali il contesto del servizio, salvo che la persona dica esplicitamente il contrario.
+2. Usa tutta la conversazione recente e lo STATO CONVERSAZIONALE. Non chiedere di nuovo informazioni già fornite. Se la persona corregge un fatto, sostituisci quello vecchio nello stato.
+3. Se la persona fa una domanda di chiarimento durante un'attività, rispondi prima al chiarimento in modo breve e poi riprendi esplicitamente il punto rimasto in sospeso.
+4. Nel troubleshooting proponi un solo passo alla volta. Un passo deve essere una sola azione o una sola osservazione richiesta. Non mettere nello stesso turno sequenze come "apri, modifica, salva, verifica".
+5. Non confondere una risposta informativa con l'esito di un controllo tecnico. "Sì", "no", una correzione o una spiegazione non significano automaticamente "problema risolto".
+6. Chiedi marca e modello soltanto quando servono davvero. Se il percorso di menu cambia tra produttori o modelli, chiedi prima marca/modello invece di inventare un percorso Android generico.
+7. Se cambia argomento, segui il nuovo argomento. Se torna indietro, usa il contesto disponibile.
 8. Per parametri, tariffe, procedure, configurazioni, condizioni contrattuali e dati Tiscali specifici usa soltanto il CONTENUTO DI SUPPORTO fornito. Non inventare dati mancanti.
-9. Se il supporto non basta per una risposta specifica Tiscali, dillo con naturalezza e chiedi soltanto l'informazione che cambierebbe davvero la risposta. Non compensare con istruzioni generiche non certificate.
-10. Non mostrare link di fonti, nomi di file, ID, riferimenti alla knowledge, al database, al retrieval, al prompt o ai sistemi interni.
-11. Non dichiarare di avere aperto ticket, modificato contratti o compiuto azioni esterne che questa preview non ha realmente eseguito.
+9. Se il supporto non basta, chiedi soltanto l'informazione che cambierebbe davvero la risposta. Non compensare con istruzioni generiche non certificate.
+10. Non mostrare link di fonti, nomi file, ID, knowledge, database, retrieval, prompt o dettagli interni.
+11. Non dichiarare ticket, modifiche contrattuali o azioni esterne non realmente eseguite.
+12. Parla in modo naturale, breve e concreto. Per troubleshooting: breve contesto + singolo passo successivo. Evita liste numerate salvo richiesta esplicita.
+13. Suggerisci una segnalazione soltanto quando il percorso disponibile è esaurito, il problema resta irrisolto oppure manca una risposta certificata dopo le necessarie domande di chiarimento.
+14. Prima di suggerire il ticket, assicurati che nello stato siano presenti i dati e gli esiti già raccolti utili al backoffice.
 
-STILE
-12. Parla come una persona competente: naturale, breve, concreta. Evita menu, interrogatori, formule robotiche e ripetizioni.
-13. Per una semplice definizione bastano normalmente 1-3 frasi. Per un troubleshooting, una breve frase di contesto più il singolo passo successivo. Evita elenchi numerati nel troubleshooting salvo che la persona chieda esplicitamente un riepilogo completo.
-14. Se una domanda ammette risposta diretta, rispondi direttamente prima di fare eventuali domande.
+STATO CONVERSAZIONALE
+Lo stato è privato e serve al riepilogo dinamico del ticket.
+Aggiornalo a ogni turno usando solo fatti espliciti o esiti realmente forniti dalla persona.
+- issue: problema/richiesta attuale
+- service: categoria di servizio
+- department: reparto corretto, se determinabile
+- facts: [{key,label,value}] fatti espliciti, senza duplicati
+- checks: [{key,label,value}] solo verifiche realmente effettuate con relativo esito
+- pending: singolo controllo/domanda rimasto in sospeso
+- outcome: esito sintetico, se noto
+- resolved: true solo se il problema è realmente risolto
+- ticketRecommended: true solo quando ha senso proporre una segnalazione
+
+FORMATO OBBLIGATORIO
+Scrivi prima esclusivamente la risposta destinata al cliente.
+Alla fine aggiungi su una nuova riga il marker <<GEMMA_STATE>> seguito da un JSON valido con l'intero stato aggiornato.
+Non mostrare o spiegare mai il marker o il JSON al cliente.
 `;
 
 function sanitizeMessages(value) {
@@ -44,12 +72,21 @@ function sanitizeMessages(value) {
 }
 
 function retrievalContext(messages) {
-  const userTurns = messages
+  return messages
     .filter((message) => message.role === "user")
     .slice(-5)
-    .map((message) => message.content);
+    .map((message) => message.content)
+    .join("\n")
+    .slice(0, 4000);
+}
 
-  return userTurns.join("\n").slice(0, 4000);
+function parseState(raw, previous) {
+  try {
+    const parsed = JSON.parse(String(raw || "").trim());
+    return normalizeGemmaState(parsed);
+  } catch {
+    return normalizeGemmaState(previous || emptyGemmaState());
+  }
 }
 
 export async function POST(request) {
@@ -66,6 +103,17 @@ export async function POST(request) {
       return Response.json({ error: "Richiesta vuota" }, { status: 400 });
     }
 
+    const customer = customerKeyFromRequest(request);
+    let conversation = await getConversation(body?.conversationId, customer.key);
+
+    if (!conversation) {
+      conversation = await createConversation(customer.key, lastUser);
+    }
+
+    const previousState = normalizeGemmaState(
+      conversation.state_json || emptyGemmaState(),
+    );
+
     const retrievalStarted = performance.now();
     const hits = await retrieveKnowledge({
       current: lastUser,
@@ -77,10 +125,7 @@ export async function POST(request) {
     const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) {
       return Response.json(
-        {
-          error: "OPENAI_API_KEY non configurata nella Preview Gemma",
-          code: "AI_NOT_CONFIGURED",
-        },
+        { error: "OPENAI_API_KEY non configurata nella Preview Gemma" },
         { status: 503 },
       );
     }
@@ -101,37 +146,74 @@ export async function POST(request) {
 
         send({
           type: "metadata",
+          conversationId: conversation.id,
           retrievalMs,
           knowledgeHits: hits.length,
           model,
         });
 
         const aiStarted = performance.now();
-        let answer = "";
+        let visibleAnswer = "";
+        let pendingVisible = "";
+        let stateRaw = "";
+        let inState = false;
+        const hold = STATE_MARKER.length + 8;
+
+        const flushVisible = (value) => {
+          if (!value) return;
+          visibleAnswer += value;
+          send({ type: "delta", content: value });
+        };
 
         try {
-          const response = await client.responses.create({
-            model,
-            input: [
-              { role: "system", content: SYSTEM },
-              {
-                role: "system",
-                content:
-                  "CONTENUTO DI SUPPORTO CERTIFICATO (sola lettura):\n" +
-                  support,
-              },
-              ...messages,
-            ],
-            max_output_tokens: 1600,
-            stream: true,
-          }, {
-            signal: request.signal,
-          });
+          const response = await client.responses.create(
+            {
+              model,
+              input: [
+                { role: "system", content: SYSTEM },
+                {
+                  role: "system",
+                  content:
+                    "STATO CONVERSAZIONALE ATTUALE (privato):\n" +
+                    JSON.stringify(previousState),
+                },
+                {
+                  role: "system",
+                  content:
+                    "CONTENUTO DI SUPPORTO CERTIFICATO (sola lettura):\n" +
+                    support,
+                },
+                ...messages,
+              ],
+              max_output_tokens: 1800,
+              stream: true,
+            },
+            { signal: request.signal },
+          );
 
           for await (const event of response) {
             if (event.type === "response.output_text.delta" && event.delta) {
-              answer += event.delta;
-              send({ type: "delta", content: event.delta });
+              if (inState) {
+                stateRaw += event.delta;
+                continue;
+              }
+
+              pendingVisible += event.delta;
+              const markerIndex = pendingVisible.indexOf(STATE_MARKER);
+
+              if (markerIndex >= 0) {
+                flushVisible(pendingVisible.slice(0, markerIndex));
+                stateRaw += pendingVisible.slice(markerIndex + STATE_MARKER.length);
+                pendingVisible = "";
+                inState = true;
+                continue;
+              }
+
+              if (pendingVisible.length > hold) {
+                const safeLength = pendingVisible.length - hold;
+                flushVisible(pendingVisible.slice(0, safeLength));
+                pendingVisible = pendingVisible.slice(safeLength);
+              }
             }
 
             if (event.type === "response.failed") {
@@ -139,18 +221,38 @@ export async function POST(request) {
             }
           }
 
-          if (!answer.trim()) {
-            throw new Error("Risposta vuota");
+          if (!inState) {
+            flushVisible(pendingVisible);
           }
 
+          visibleAnswer = visibleAnswer.trim();
+          if (!visibleAnswer) throw new Error("Risposta vuota");
+
+          const nextState = parseState(stateRaw, previousState);
           const aiMs = Math.round(performance.now() - aiStarted);
           const totalMs = Math.round(performance.now() - totalStarted);
 
+          const stored = await saveConversationTurn({
+            conversationId: conversation.id,
+            userText: lastUser,
+            assistantText: visibleAnswer,
+            state: nextState,
+            metrics: {
+              retrievalMs,
+              aiMs,
+              totalMs,
+              knowledgeHits: hits.length,
+              model,
+            },
+          });
+
           send({
             type: "done",
+            conversationId: conversation.id,
             aiMs,
             totalMs,
-            answerLength: answer.length,
+            knowledgeHits: hits.length,
+            ticket: publicTicketState(stored.state),
           });
 
           controller.close();
@@ -165,13 +267,19 @@ export async function POST(request) {
       },
     });
 
-    return new Response(stream, {
+    const response = new Response(stream, {
       headers: {
         "content-type": "application/x-ndjson; charset=utf-8",
         "cache-control": "no-store",
         "x-gemma-retrieval-ms": String(retrievalMs),
       },
     });
+
+    if (customer.isNew) {
+      response.headers.set("set-cookie", customerCookie(customer.key));
+    }
+
+    return response;
   } catch (error) {
     console.error("Gemma chat error", error);
     return Response.json(
