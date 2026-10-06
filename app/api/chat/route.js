@@ -122,8 +122,10 @@ export async function POST(request) {
               },
               ...messages,
             ],
-            max_output_tokens: 850,
+            max_output_tokens: 1600,
             stream: true,
+          }, {
+            signal: request.signal,
           });
 
           for await (const event of response) {
@@ -135,6 +137,10 @@ export async function POST(request) {
             if (event.type === "response.failed") {
               throw new Error("Generazione fallita");
             }
+          }
+
+          if (!answer.trim()) {
+            throw new Error("Risposta vuota");
           }
 
           const aiMs = Math.round(performance.now() - aiStarted);
