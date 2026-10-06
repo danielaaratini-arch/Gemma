@@ -66,6 +66,7 @@ for (const route of ["app/cliente/page.js", "app/backoffice/page.js", "app/admin
 const dbModule = read("lib/db.js");
 const storeModule = read("lib/gemma-store.js");
 const ticketRoute = read("app/api/gemma/tickets/route.js");
+const ticketDetailRoute = read("app/api/gemma/tickets/[id]/route.js");
 
 if (!dbModule.includes("GEMMA_DB_READ_POOL") || !dbModule.includes("GEMMA_DB_WRITE_POOL")) {
   failures.push("Manca la separazione dei pool DB Gemma.");
@@ -295,12 +296,106 @@ if (!read("app/cliente/page.js").includes("Attiva notifiche")) {
   failures.push("Opt-in Web Push Area Cliente mancante.");
 }
 
-if (!ticketRoute.includes("notifyCustomerTicketStatus")) {
+if (!ticketDetailRoute.includes("notifyCustomerTicketStatus")) {
   failures.push("I cambi stato ticket non inviano la push al cliente.");
 }
 
 if (!read("package.json").includes('"web-push"')) {
   failures.push("Dipendenza Web Push standard mancante.");
+}
+
+if (!fs.existsSync("lib/gemma-knowledge-ingest.js")) {
+  failures.push("Modulo ingest Knowledge allineato a Lia/Alda mancante.");
+} else {
+  const ingest = read("lib/gemma-knowledge-ingest.js");
+  for (const token of [
+    "lia-final-hygiene-v2.4",
+    "KNOWLEDGE_FINAL_HYGIENE_EXCLUDED_FILES",
+    "applyPersistentKnowledgeHygiene",
+    "importedPageClassification",
+    "prepareImportedKnowledgePage",
+  ]) {
+    if (!ingest.includes(token)) {
+      failures.push("Parità ingest Lia/Alda incompleta: " + token);
+    }
+  }
+}
+
+if (!read("lib/gemma-knowledge-sync.js").includes("ingest_revision")) {
+  failures.push("I job Knowledge non sono vincolati alla revisione ingest.");
+}
+
+if (
+  !read("lib/gemma-knowledge-sync.js").includes(
+    "La Preview è stata generata con una revisione ingest precedente",
+  )
+) {
+  failures.push("Apply Knowledge senza blocco delle Preview ingest obsolete.");
+}
+
+if (!fs.existsSync("lib/gemma-knowledge-worker.js") ||
+    !fs.existsSync("app/api/gemma/internal/knowledge-worker/route.js")) {
+  failures.push("Worker autonomo Knowledge mancante.");
+}
+
+if (!read("app/api/gemma/admin/knowledge-sync/route.js").includes("continueInBackground")) {
+  failures.push("I job Knowledge dipendono ancora dal browser per proseguire.");
+}
+
+if (!read("scripts/migrate-gemma.mjs").includes("migrateKnowledgeSyncSchema")) {
+  failures.push("La migrazione production non include lo schema Knowledge Sync.");
+}
+
+if (!read("lib/gemma-knowledge-sync.js").includes("productionNoAutoMigrate")) {
+  failures.push("Knowledge Sync può ancora eseguire DDL automatico in production.");
+}
+
+if (!fs.existsSync("app/api/gemma/admin/knowledge/upload/route.js") ||
+    !fs.existsSync("lib/gemma-document-parser.js")) {
+  failures.push("Upload documenti Knowledge Gemma mancante.");
+}
+
+if (!read("app/admin/knowledge/page.js").includes("loadKnowledgeFile")) {
+  failures.push("Upload Knowledge non collegato all'interfaccia Admin.");
+}
+
+if (!read("package.json").includes('"pdf-parse"') ||
+    !read("package.json").includes('"mammoth"')) {
+  failures.push("Parser PDF/DOCX Knowledge mancanti.");
+}
+
+if (!store.includes("blob_path TEXT") ||
+    !store.includes("blob ? null : Buffer.from(file.buffer)")) {
+  failures.push("Gli allegati possono ancora essere salvati come binario DB quando Blob è disponibile.");
+}
+
+if (!store.includes("customer_code TEXT") ||
+    !store.includes("service_number TEXT") ||
+    !store.includes("notification_email_verified")) {
+  failures.push("Dati cliente strutturati incompleti nel ticket.");
+}
+
+if (!read("lib/gemma-auth.js").includes("email_verified") ||
+    !fs.existsSync("app/api/gemma/auth/verify-email/route.js")) {
+  failures.push("Verifica email cliente incompleta.");
+}
+
+if (!read("app/backoffice/page.js").includes("Codice cliente") ||
+    !read("app/backoffice/page.js").includes("Numero linea / SIM")) {
+  failures.push("Backoffice non mostra i dati cliente strutturati.");
+}
+
+if (!dbModule.includes("databaseConnectionProfile") ||
+    !dbModule.includes("productionConservativeMode")) {
+  failures.push("Protezione pool DB serverless production mancante.");
+}
+
+if (read("components/GemmaInternalNav.js").includes("AI Router")) {
+  failures.push("AI Router tecnico ancora esposto nel menu Admin.");
+}
+
+if (read("components/GemmaInternalNav.js").includes('"/admin/memory"')) {
+  failures.push("Customer Memory tecnica ancora esposta nel menu Admin.");
 }
 
 if (failures.length) {
