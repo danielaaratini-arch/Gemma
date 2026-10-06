@@ -4,6 +4,7 @@ import {
   getTicket,
   updateTicket,
 } from "../../../../../lib/gemma-store";
+import { notifyTicketStatusChanged } from "../../../../../lib/gemma-notifications";
 
 export const runtime = "nodejs";
 
@@ -34,10 +35,19 @@ export async function PATCH(request, context) {
   try {
     const { id } = await context.params;
     const body = await request.json();
-    const ticket = await updateTicket(id, body || {}, body?.actor || "Operatore Demo");
+    const before = await getTicket(id, null);
+    const ticket = await updateTicket(
+      id,
+      body || {},
+      body?.actor || "Operatore Demo",
+    );
 
     if (!ticket) {
       return Response.json({ error: "Ticket non trovato." }, { status: 404 });
+    }
+
+    if (before && before.status !== ticket.status) {
+      await notifyTicketStatusChanged(ticket, before.status);
     }
 
     return Response.json({ ticket });

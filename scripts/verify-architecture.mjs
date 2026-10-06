@@ -83,6 +83,26 @@ if (!ticketRoute.includes("nextCursor")) {
   failures.push("Manca la paginazione cursor-based dei ticket.");
 }
 
+if (!fs.existsSync("app/api/gemma/tickets/[id]/attachments/route.js")) {
+  failures.push("Endpoint allegati ticket mancante.");
+}
+
+if (!fs.existsSync("app/api/gemma/files/[id]/route.js")) {
+  failures.push("Endpoint lettura allegati mancante.");
+}
+
+if (!read("lib/gemma-store.js").includes("ticket_attachment")) {
+  failures.push("Persistenza allegati Gemma mancante.");
+}
+
+if (!read("lib/gemma-store.js").includes("notification_email")) {
+  failures.push("Email notifiche ticket mancante.");
+}
+
+if (!read("lib/gemma-notifications.js").includes("SMTP_USER")) {
+  failures.push("Configurazione notifiche SMTP mancante.");
+}
+
 if (failures.length) {
   console.error(failures.join("\n"));
   process.exit(1);

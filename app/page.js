@@ -77,6 +77,7 @@ export default function Home() {
   const [ticketOffer, setTicketOffer] = useState(null);
   const [openedTicket, setOpenedTicket] = useState(null);
   const [ticketRequestKey, setTicketRequestKey] = useState(null);
+  const [notificationEmail, setNotificationEmail] = useState("");
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const [ticketBusy, setTicketBusy] = useState(false);
@@ -120,7 +121,7 @@ export default function Home() {
     setTicketOffer(null);
     setOpenedTicket(null);
     setTicketRequestKey(null);
-    setTicketRequestKey(null);
+    setNotificationEmail("");
     setConversationId(null);
     setMessages([welcome]);
 
@@ -138,7 +139,7 @@ export default function Home() {
       const response = await fetch("/api/gemma/tickets", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ conversationId, requestKey: ticketRequestKey }),
+        body: JSON.stringify({ conversationId, requestKey: ticketRequestKey, notificationEmail }),
       });
       const data = await response.json();
 
@@ -391,9 +392,21 @@ export default function Home() {
                         {ticketOffer.department || "competente"}.
                       </span>
                     </div>
-                    <button onClick={openTicket} disabled={ticketBusy}>
-                      {ticketBusy ? "Apertura…" : "Apri segnalazione"}
-                    </button>
+                    <div className="ticketOfferActions">
+                      <input
+                        type="email"
+                        value={notificationEmail}
+                        onChange={(event) => setNotificationEmail(event.target.value)}
+                        placeholder="Email per le notifiche"
+                        aria-label="Email per le notifiche del ticket"
+                      />
+                      <button
+                        onClick={openTicket}
+                        disabled={ticketBusy || !notificationEmail.includes("@")}
+                      >
+                        {ticketBusy ? "Apertura…" : "Apri segnalazione"}
+                      </button>
+                    </div>
                   </div>
                 )}
 

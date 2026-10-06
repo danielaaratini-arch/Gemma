@@ -165,7 +165,7 @@ button,input{font:inherit}button{cursor:pointer}
 .gemmaStatusDot{width:11px;height:11px;border-radius:50%;background:#10b981}
 .gemmaStatusThinking{background:#3b82f6;animation:pulse 1.2s infinite}
 .gemmaAvatarArea{position:relative;flex:0 0 60%;height:60%;min-height:0;overflow:hidden;background:radial-gradient(circle at 50% 88%,rgba(16,185,129,.14),transparent 44%),linear-gradient(to bottom,#fff,#f0fdf9)}
-.gemmaAvatarPosition{position:absolute;inset:-168px 0 auto;height:calc(100% + 168px)}
+.gemmaAvatarPosition{position:absolute;inset:-142px 0 auto;height:calc(100% + 142px)}
 .gemmaAvatarPosition>div,.gemmaAvatarPosition canvas{width:100%!important;height:100%!important}
 .gemmaChatArea{flex:1 1 40%;min-height:0;overflow:hidden;border-top:1px solid #e2e8f0;background:#f8fafc;display:flex;flex-direction:column}
 .gemmaMessages{min-width:0;min-height:0;flex:1 1 auto;overflow-x:hidden;overflow-y:auto;padding:14px 16px 10px;display:flex;flex-direction:column;gap:9px;font-size:13px;line-height:1.4;scrollbar-width:thin}
@@ -212,7 +212,7 @@ button,input{font:inherit}button{cursor:pointer}
  .gemmaIdentity{min-width:0;display:flex;flex-direction:column}.gemmaIdentity strong{color:#0f172a;font-size:15px}.gemmaIdentity span{margin-top:2px;color:#64748b;font-size:10px}
  .gemmaStatus{padding:7px 9px;background:#fff;box-shadow:none;font-size:10px;gap:6px}.gemmaStatusDot{width:8px;height:8px}
  .gemmaAvatarArea{flex:0 1 55%;height:auto;min-height:0}
- .gemmaAvatarPosition{top:-118px;height:calc(100% + 118px)}
+ .gemmaAvatarPosition{top:-96px;height:calc(100% + 96px)}
  .gemmaChatArea{flex:1 1 45%;min-height:0}
  .gemmaMessages{font-size:12px;padding:9px 10px 6px;gap:7px}
  .gemmaMessage{padding:8px 10px}
@@ -256,4 +256,26 @@ button,input{font:inherit}button{cursor:pointer}
  .gemmaCustomerTitle h1{font-size:20px}.gemmaCustomerTitle span{font-size:10px}.gemmaCustomerTitle p{font-size:10px}
  .gemmaCustomerHeaderActions{display:none}
  .gemmaCustomerContent{padding:10px 8px 20px}
+}
+
+
+.ticketOfferActions{display:flex;flex-direction:column;gap:7px;min-width:210px}
+.ticketOfferActions input{width:100%;min-width:0;border:1px solid #cbd5e1;border-radius:11px;background:#fff;padding:9px 10px;font-size:12px;outline:none}
+.ticketOfferActions input:focus{border-color:#10b981;box-shadow:0 0 0 3px rgba(16,185,129,.1)}
+.attachmentCard{display:flex;flex-direction:column;gap:9px}
+.attachmentList{display:flex;flex-wrap:wrap;gap:8px}
+.attachmentItem{display:inline-flex;align-items:center;gap:8px;max-width:100%;border:1px solid #e2e8f0;border-radius:11px;background:#f8fafc;padding:8px 10px;color:#334155;text-decoration:none;font-size:12px;font-weight:700}
+.attachmentItem:hover{border-color:#10b981;background:#ecfdf5}
+.attachmentItem span{max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.attachmentItem small{color:#94a3b8;font-size:10px;font-weight:600}
+.attachmentEmpty{font-size:12px;color:#94a3b8}
+.attachmentUpload{display:inline-flex;width:max-content;cursor:pointer;align-items:center;justify-content:center;border:1px solid #10b981;border-radius:11px;background:#fff;padding:9px 12px;color:#047857;font-size:12px;font-weight:800}
+.attachmentUpload:hover{background:#ecfdf5}
+.attachmentUpload input{display:none}
+.attachmentLimits{color:#94a3b8;font-size:10px}
+.attachmentError{margin:0;color:#b91c1c;font-size:11px;font-weight:700}
+@media(max-width:767px){
+ .ticketOfferActions{width:100%;min-width:0}
+ .attachmentItem{width:100%;justify-content:space-between}
+ .attachmentItem span{max-width:70vw}
 }

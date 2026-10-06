@@ -42,6 +42,8 @@ export default function BackofficeArea() {
   const [reply, setReply] = useState("");
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
+  const [uploadBusy, setUploadBusy] = useState(false);
+  const [uploadError, setUploadError] = useState("");
 
   async function loadTickets() {
     const response = await fetch("/api/gemma/tickets?scope=all", {
@@ -93,6 +95,43 @@ export default function BackofficeArea() {
       await Promise.all([loadDetail(selectedId), loadTickets()]);
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function uploadAttachments(event) {
+    const files = Array.from(event.target.files || []);
+    event.target.value = "";
+    if (!selectedId || files.length === 0 || uploadBusy) return;
+
+    setUploadBusy(true);
+    setUploadError("");
+
+    try {
+      const formData = new FormData();
+      for (const file of files) formData.append("files", file);
+
+      const response = await fetch(
+        "/api/gemma/tickets/" + selectedId + "/attachments?scope=staff",
+        {
+          method: "POST",
+          body: formData,
+        },
+      );
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data?.error || "Caricamento non riuscito.");
+      }
+
+      await Promise.all([loadDetail(selectedId), loadTickets()]);
+    } catch (error) {
+      setUploadError(
+        error instanceof Error
+          ? error.message
+          : "Caricamento non riuscito.",
+      );
+    } finally {
+      setUploadBusy(false);
     }
   }
 
@@ -250,6 +289,50 @@ export default function BackofficeArea() {
               </div>
 
               <TicketSummary ticket={detail} />
+
+              <section className="conversationCard attachmentCard">
+                <div className="panelTitle">Allegati ticket</div>
+
+                <div className="attachmentList">
+                  {(detail.attachments || []).length === 0 ? (
+                    <span className="attachmentEmpty">Nessun allegato.</span>
+                  ) : (
+                    (detail.attachments || []).map((file) => (
+                      <a
+                        key={file.id}
+                        className="attachmentItem"
+                        href={file.url + "?scope=staff"}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        <span>📎 {file.original_name}</span>
+                        <small>
+                          {Math.max(1, Math.round(Number(file.size_bytes || 0) / 1024))} KB
+                        </small>
+                      </a>
+                    ))
+                  )}
+                </div>
+
+                <label className="attachmentUpload">
+                  {uploadBusy ? "Caricamento…" : "Allega dal backoffice"}
+                  <input
+                    type="file"
+                    multiple
+                    disabled={uploadBusy}
+                    accept=".pdf,.txt,.rtf,.csv,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png,.gif,.webp,.heic,.heif,.bmp,.tif,.tiff,.mp3,.m4a,.aac,.wav,.ogg,.oga,.webm,.amr,.mp4,.mov,.m4v,.3gp,.3g2,.mpeg,.mpg,.avi,.mkv"
+                    onChange={uploadAttachments}
+                  />
+                </label>
+
+                <small className="attachmentLimits">
+                  Max 5 file alla volta · 5 MB per file · 10 MB per ticket
+                </small>
+
+                {uploadError ? (
+                  <p className="attachmentError">{uploadError}</p>
+                ) : null}
+              </section>
 
               <div className="staffColumns">
                 <section className="conversationCard">

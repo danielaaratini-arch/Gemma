@@ -4,6 +4,7 @@ import {
   customerKeyFromRequest,
   listTickets,
 } from "../../../../lib/gemma-store";
+import { notifyTicketCreated } from "../../../../lib/gemma-notifications";
 
 export const runtime = "nodejs";
 
@@ -89,7 +90,15 @@ export async function POST(request) {
         typeof body?.requestKey === "string"
           ? body.requestKey
           : undefined,
+      notificationEmail:
+        typeof body?.notificationEmail === "string"
+          ? body.notificationEmail
+          : undefined,
     });
+
+    if (ticket) {
+      await notifyTicketCreated(ticket);
+    }
 
     const response = Response.json({ ticket }, { status: 201 });
     if (session.isNew) {
