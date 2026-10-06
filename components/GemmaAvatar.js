@@ -65,7 +65,7 @@ function frameShoulderPortrait(model, camera, head, leftEye, rightEye) {
     eyeCenterZ = (left.z + right.z) * 0.5;
   }
 
-  camera.fov = 30;
+  camera.fov = 32;
   const fov = MathUtils.degToRad(camera.fov);
 
   // Stesso criterio portrait di Alda: inquadratura testa + spalle,
