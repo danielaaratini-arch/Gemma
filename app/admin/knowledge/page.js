@@ -280,8 +280,40 @@ function KnowledgeBody({ user, logout }) {
     return data.job;
   }
 
+  async function kickKnowledgeJob(current) {
+    if (!current?.id) return current;
+
+    if (current.status === "PREVIEWING") {
+      return await syncRequest({
+        action: "step-preview",
+        jobId: current.id,
+        batchSize: 8,
+      });
+    }
+
+    if (current.status === "APPLYING") {
+      return await syncRequest({
+        action: "step-apply",
+        jobId: current.id,
+        batchSize: 10,
+      });
+    }
+
+    if (current.status === "ROLLING_BACK") {
+      return await syncRequest({
+        action: "rollback-step",
+        jobId: current.id,
+        batchSize: 10,
+      });
+    }
+
+    return current;
+  }
+
   async function watchKnowledgeJob(current) {
     let next = current;
+    let lastUpdatedAt = String(current?.updated_at || "");
+    let stagnantPolls = 0;
 
     while (
       next?.id &&
@@ -289,6 +321,24 @@ function KnowledgeBody({ user, logout }) {
     ) {
       await wait(750);
       next = await fetchKnowledgeJob(next.id);
+
+      const updatedAt = String(next?.updated_at || "");
+      if (updatedAt && updatedAt !== lastUpdatedAt) {
+        lastUpdatedAt = updatedAt;
+        stagnantPolls = 0;
+      } else {
+        stagnantPolls += 1;
+      }
+
+      if (
+        stagnantPolls >= 16 &&
+        ["PREVIEWING", "APPLYING", "ROLLING_BACK"].includes(next.status)
+      ) {
+        next = await kickKnowledgeJob(next);
+        lastUpdatedAt = String(next?.updated_at || "");
+        stagnantPolls = 0;
+      }
+
       setJob(next);
     }
 
