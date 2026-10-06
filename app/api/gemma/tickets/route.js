@@ -2,7 +2,7 @@ import { after } from "next/server";
 import {
   createTicket,
   customerCookie,
-  customerKeyFromRequest,
+  customerContextFromRequest,
   listTickets,
 } from "../../../../lib/gemma-store";
 import { notifyTicketCreated } from "../../../../lib/gemma-notifications";
@@ -38,7 +38,13 @@ function encodeCursor(ticket) {
 
 export async function GET(request) {
   try {
-    const session = customerKeyFromRequest(request);
+    const session = await customerContextFromRequest(request);
+    if (session.invalid) {
+      return Response.json(
+        { error: "Sessione cliente non valida. Accedi di nuovo." },
+        { status: 401 },
+      );
+    }
     const url = new URL(request.url);
     const scope = url.searchParams.get("scope");
     const limit = Math.max(
@@ -92,7 +98,13 @@ export async function GET(request) {
 
 export async function POST(request) {
   try {
-    const session = customerKeyFromRequest(request);
+    const session = await customerContextFromRequest(request);
+    if (session.invalid) {
+      return Response.json(
+        { error: "Sessione cliente non valida. Accedi di nuovo." },
+        { status: 401 },
+      );
+    }
     const body = await request.json();
     const conversationId =
       typeof body?.conversationId === "string" ? body.conversationId.trim() : "";
