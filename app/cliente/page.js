@@ -313,7 +313,10 @@ function CustomerAreaBody({ user, logout }) {
       })),
       ...(detail.attachments || []).map((item) => ({
         id: "attachment-" + item.id,
-        role: "CUSTOMER",
+        role:
+          String(item.uploaded_by || "").toLowerCase() === "cliente"
+            ? "CUSTOMER"
+            : "OPERATOR",
         content: "",
         created_at: item.created_at,
         source: "attachment",
