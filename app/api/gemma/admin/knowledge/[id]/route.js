@@ -1,7 +1,25 @@
-import { updateManualKnowledgeDocument } from "../../../../../../lib/gemma-admin";
+import { getKnowledgeDocumentById, updateManualKnowledgeDocument } from "../../../../../../lib/gemma-admin";
 import { requireRole } from "../../../../../../lib/gemma-auth";
 
 export const runtime = "nodejs";
+
+export async function GET(request, context) {
+  if (!(await requireRole(request, ["ADMIN"]))) {
+    return Response.json({ error: "Non autorizzato." }, { status: 401 });
+  }
+
+  const { id } = await context.params;
+  const document = await getKnowledgeDocumentById(id);
+
+  if (!document) {
+    return Response.json(
+      { error: "Documento Knowledge non trovato." },
+      { status: 404 },
+    );
+  }
+
+  return Response.json({ document });
+}
 
 export async function PATCH(request, context) {
   if (!(await requireRole(request, ["ADMIN"]))) {
