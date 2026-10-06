@@ -236,7 +236,7 @@ export async function POST(request) {
       maxRetries: 1,
     });
 
-    const model = process.env.OPENAI_MODEL || "gpt-5-mini";
+    const model = process.env.OPENAI_MODEL || "gpt-6-luna";
     const encoder = new TextEncoder();
 
     const stream = new ReadableStream({
