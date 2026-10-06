@@ -3,7 +3,8 @@
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useEffect, useRef, useState } from "react";
-import PortalNav from "../components/PortalNav";
+import GemmaHeader from "../components/GemmaHeader";
+import GemmaFooter from "../components/GemmaFooter";
 import { useGemmaSpeech } from "../components/useGemmaSpeech";
 
 const GemmaAvatar = dynamic(() => import("../components/GemmaAvatar"), {
@@ -300,123 +301,164 @@ export default function Home() {
   const status = speaking ? "speaking" : busy ? "thinking" : "idle";
 
   return (
-    <main className="shell">
-      <section className="app">
-        <aside className="hero">
-          <div className="brand">
-            TAAP <span>Gemma</span>
-          </div>
-          <div className="kicker">
-            Conversazione naturale, un passo alla volta e riepilogo operativo
-            aggiornato durante il dialogo.
-          </div>
+    <main className="gemmaPublicPage">
+      <GemmaHeader />
 
-          <div className="avatarBox">
-            <GemmaAvatar status={status} />
-            <div className="badge">
-              {speaking
-                ? "Gemma sta parlando"
-                : busy
-                  ? "Gemma sta ragionando"
-                  : "Gemma è pronta"}
-            </div>
-          </div>
-        </aside>
+      <section className="gemmaHeroSection">
+        <div className="gemmaHeroContainer">
+          <div className="gemmaPresentation">
+            <p className="gemmaEyebrow">Tiscali Assistant AI Platform</p>
 
-        <section className="chat">
-          <header className="chatHead">
-            <div>
-              <strong>Parla con Gemma</strong>
-              <span>
-                Preview isolata
-                {metrics?.totalMs
-                  ? " · " + metrics.totalMs + " ms"
-                  : metrics?.retrievalMs
-                    ? " · ricerca " + metrics.retrievalMs + " ms"
-                    : ""}
-              </span>
+            <h1 className="gemmaHeroTitle">
+              Gemma, il nuovo volto
+              <br />
+              dell&apos;assistenza <span>Tiscali.</span>
+            </h1>
+
+            <p className="gemmaHeroDescription">
+              Un assistente conversazionale che comprende il contesto,
+              consulta la knowledge Tiscali e accompagna il cliente fino
+              all&apos;eventuale apertura della segnalazione.
+            </p>
+
+            <div className="gemmaHeroActions">
+              <Link href="/cliente" className="gemmaSecondaryButton">
+                Area cliente
+              </Link>
             </div>
 
-            <div className="chatHeaderRight">
-              <PortalNav />
-              <div className="headActions">
-                {speaking && (
-                  <button
-                    className="textButton"
-                    onClick={stopSpeech}
-                    type="button"
-                  >
-                    Ferma voce
-                  </button>
+            <p className="gemmaHeroCredit">
+              Progettato per Tiscali con identità Smeraldo.
+            </p>
+          </div>
+
+          <div className="gemmaAssistantPanel">
+            <div className="gemmaPanelHeader">
+              <div className="gemmaIdentity">
+                <strong>Gemma</strong>
+                <span>Assistente virtuale Tiscali</span>
+              </div>
+
+              <div className="gemmaStatus">
+                <span
+                  className={
+                    busy
+                      ? "gemmaStatusDot gemmaStatusThinking"
+                      : "gemmaStatusDot"
+                  }
+                />
+                <span>
+                  {busy
+                    ? "Gemma sta pensando"
+                    : speaking
+                      ? "Gemma sta parlando"
+                      : "Gemma Online"}
+                </span>
+              </div>
+            </div>
+
+            <div className="gemmaAvatarArea">
+              <div className="gemmaAvatarPosition">
+                <GemmaAvatar status={status} />
+              </div>
+            </div>
+
+            <div className="gemmaChatArea">
+              <div className="gemmaMessages" ref={listRef}>
+                {messages.map((message, index) => (
+                  <div key={index} className={"gemmaMessage " + message.role}>
+                    {message.content ||
+                      (busy && index === messages.length - 1
+                        ? "Sto verificando il contesto…"
+                        : "")}
+                  </div>
+                ))}
+
+                {ticketOffer && !openedTicket && (
+                  <div className="ticketOffer">
+                    <div>
+                      <strong>Vuoi aprire una segnalazione?</strong>
+                      <span>
+                        Il riepilogo raccolto da Gemma verrà passato al reparto{" "}
+                        {ticketOffer.department || "competente"}.
+                      </span>
+                    </div>
+                    <button onClick={openTicket} disabled={ticketBusy}>
+                      {ticketBusy ? "Apertura…" : "Apri segnalazione"}
+                    </button>
+                  </div>
                 )}
-                <button
-                  className="textButton"
-                  onClick={newConversation}
-                  type="button"
-                >
-                  Nuova chat
-                </button>
+
+                {openedTicket && (
+                  <div className="ticketOpened">
+                    <div>
+                      <strong>Segnalazione #{openedTicket.number} aperta</strong>
+                      <span>
+                        Puoi seguirla e rispondere dal tuo spazio cliente.
+                      </span>
+                    </div>
+                    <Link href="/cliente">Vai all’area cliente</Link>
+                  </div>
+                )}
+              </div>
+
+              <div className="gemmaComposerWrap">
+                <form className="gemmaComposer" onSubmit={submit}>
+                  <input
+                    value={input}
+                    onChange={(event) => setInput(event.target.value)}
+                    placeholder="Scrivi la tua richiesta…"
+                    autoComplete="off"
+                    aria-label="Messaggio per Gemma"
+                  />
+                  <button disabled={busy || !input.trim()}>
+                    Invia
+                  </button>
+                </form>
+
+                <div className="gemmaComposerMeta">
+                  <div>
+                    {metrics?.totalMs
+                      ? metrics.totalMs + " ms"
+                      : "Preview Gemma"}
+                  </div>
+                  <div className="gemmaComposerActions">
+                    {speaking && (
+                      <button type="button" onClick={stopSpeech}>
+                        Ferma voce
+                      </button>
+                    )}
+                    <button type="button" onClick={newConversation}>
+                      Nuova chat
+                    </button>
+                    <Link href="/cliente">Area cliente</Link>
+                  </div>
+                </div>
               </div>
             </div>
-          </header>
-
-          <div className="messages" ref={listRef}>
-            {messages.map((message, index) => (
-              <div key={index} className={"msg " + message.role}>
-                {message.content ||
-                  (busy && index === messages.length - 1
-                    ? "Sto verificando il contesto…"
-                    : "")}
-              </div>
-            ))}
-
-            {ticketOffer && !openedTicket && (
-              <div className="ticketOffer">
-                <div>
-                  <strong>Vuoi aprire una segnalazione?</strong>
-                  <span>
-                    Il riepilogo raccolto da Gemma verrà passato al reparto{" "}
-                    {ticketOffer.department || "competente"}.
-                  </span>
-                </div>
-                <button onClick={openTicket} disabled={ticketBusy}>
-                  {ticketBusy ? "Apertura…" : "Apri segnalazione"}
-                </button>
-              </div>
-            )}
-
-            {openedTicket && (
-              <div className="ticketOpened">
-                <div>
-                  <strong>Segnalazione #{openedTicket.number} aperta</strong>
-                  <span>
-                    Puoi seguirla e rispondere dal tuo spazio cliente.
-                  </span>
-                </div>
-                <Link href="/cliente">Vai all’area cliente</Link>
-              </div>
-            )}
           </div>
-
-          <form className="composer" onSubmit={submit}>
-            <input
-              value={input}
-              onChange={(event) => setInput(event.target.value)}
-              placeholder="Scrivi la tua richiesta…"
-              autoComplete="off"
-              aria-label="Messaggio per Gemma"
-            />
-            <button className="send" disabled={busy || !input.trim()}>
-              Invia
-            </button>
-          </form>
-
-          <div className="note">
-            Knowledge condivisa in sola lettura. I dati operativi Gemma sono
-            separati nello schema dedicato <strong>gemma</strong>.
-          </div>
-        </section>
+        </div>
       </section>
+
+      <section className="gemmaQuickLinks">
+        <div>
+          <strong>Area cliente</strong>
+          <span>Consulta ticket e messaggi del backoffice.</span>
+          <Link href="/cliente">Apri area cliente</Link>
+        </div>
+        <div>
+          <strong>Backoffice</strong>
+          <span>Gestisci code, note, stati e risposte.</span>
+          <Link href="/backoffice">Apri backoffice</Link>
+        </div>
+        <div>
+          <strong>Admin</strong>
+          <span>Controlla performance, ticket e piattaforma.</span>
+          <Link href="/admin">Apri admin</Link>
+        </div>
+      </section>
+
+      <GemmaFooter />
     </main>
   );
 }
