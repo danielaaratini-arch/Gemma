@@ -131,3 +131,97 @@ button,input{font:inherit}button{cursor:pointer}
  .statGrid{grid-template-columns:1fr 1fr}.operatorControls{grid-template-columns:1fr}
  .chatHead{align-items:flex-start}.headActions{justify-content:flex-start}
 }
+
+
+/* Gemma public experience — aligned to Lia/Alda visual language */
+.gemmaPublicPage{min-height:100dvh;background:#fff;color:#020617}
+.gemmaPublicHeader{border-bottom:1px solid #e2e8f0;background:#fff}
+.gemmaPublicHeaderInner{min-height:80px;max-width:1500px;margin:0 auto;padding:0 24px;display:flex;align-items:center;gap:24px}
+.gemmaLogo{display:flex;flex-direction:column;text-decoration:none;line-height:1}
+.gemmaLogoMain{font-size:20px;font-weight:800;color:#020617}
+.gemmaLogoSub{margin-top:6px;font-size:12px;font-weight:700;color:#059669}
+.gemmaPublicNav{margin-left:auto;display:flex;align-items:center;gap:30px}
+.gemmaPublicNavLink{color:#334155;text-decoration:none;font-size:14px;font-weight:700;transition:.16s ease}
+.gemmaPublicNavLink:hover{color:#059669}
+.gemmaCustomerLink{display:inline-flex;align-items:center;justify-content:center;min-height:40px;padding:0 17px;border:1px solid #10b981;border-radius:12px;background:#fff;color:#047857;text-decoration:none;font-size:14px;font-weight:800;transition:.16s ease}
+.gemmaCustomerLink:hover{background:#ecfdf5}
+
+.gemmaHeroSection{overflow:hidden;border-bottom:1px solid #e2e8f0;background:#fff}
+.gemmaHeroContainer{width:min(1480px,calc(100% - 48px));height:min(760px,calc(100dvh - 96px));min-height:640px;margin:0 auto;padding:8px 0;display:grid;grid-template-columns:minmax(0,.86fr) minmax(560px,1.14fr);align-items:center;gap:48px}
+.gemmaPresentation{min-width:0;max-width:590px}
+.gemmaEyebrow{margin:0;color:#059669;font-size:14px;font-weight:800;letter-spacing:.22em;text-transform:uppercase}
+.gemmaHeroTitle{margin:18px 0 0;color:#020617;font-size:clamp(38px,3.5vw,58px);font-weight:900;line-height:1.03;letter-spacing:-.04em}
+.gemmaHeroTitle span{color:#059669}
+.gemmaHeroDescription{max-width:550px;margin:24px 0 0;color:#475569;font-size:18px;line-height:1.65}
+.gemmaHeroActions{margin-top:28px;display:flex;gap:12px;flex-wrap:wrap}
+.gemmaSecondaryButton{min-height:50px;padding:0 28px;border:1px solid #10b981;border-radius:16px;background:#fff;color:#047857;display:inline-flex;align-items:center;justify-content:center;font-weight:800;text-decoration:none;transition:.16s ease}
+.gemmaSecondaryButton:hover{background:#ecfdf5}
+.gemmaHeroCredit{margin:28px 0 0;color:#64748b;font-size:14px}
+
+.gemmaAssistantPanel{position:relative;min-width:0;width:100%;height:100%;min-height:0;border:1px solid #dbe3ec;border-radius:32px;background:#fff;overflow:hidden;box-shadow:0 30px 90px rgba(15,23,42,.13);display:flex;flex-direction:column}
+.gemmaPanelHeader{position:absolute;z-index:10;top:20px;right:20px}
+.gemmaIdentity{display:none}
+.gemmaStatus{padding:10px 15px;border:1px solid #e2e8f0;border-radius:999px;background:rgba(255,255,255,.94);box-shadow:0 8px 25px rgba(15,23,42,.08);color:#334155;font-size:14px;font-weight:700;display:flex;align-items:center;gap:9px}
+.gemmaStatusDot{width:11px;height:11px;border-radius:50%;background:#10b981}
+.gemmaStatusThinking{background:#3b82f6;animation:pulse 1.2s infinite}
+.gemmaAvatarArea{position:relative;flex:0 0 60%;height:60%;min-height:0;overflow:hidden;background:radial-gradient(circle at 50% 88%,rgba(16,185,129,.14),transparent 44%),linear-gradient(to bottom,#fff,#f0fdf9)}
+.gemmaAvatarPosition{position:absolute;inset:-168px 0 auto;height:calc(100% + 168px)}
+.gemmaAvatarPosition>div,.gemmaAvatarPosition canvas{width:100%!important;height:100%!important}
+.gemmaChatArea{flex:1 1 40%;min-height:0;overflow:hidden;border-top:1px solid #e2e8f0;background:#f8fafc;display:flex;flex-direction:column}
+.gemmaMessages{min-width:0;min-height:0;flex:1 1 auto;overflow-x:hidden;overflow-y:auto;padding:14px 16px 10px;display:flex;flex-direction:column;gap:9px;font-size:13px;line-height:1.4;scrollbar-width:thin}
+.gemmaMessage{max-width:86%;padding:9px 12px;border-radius:15px;white-space:pre-wrap;overflow-wrap:anywhere}
+.gemmaMessage.user{align-self:flex-end;background:#0f172a;color:#fff;border-bottom-right-radius:5px}
+.gemmaMessage.assistant{align-self:flex-start;background:#fff;border:1px solid #e2e8f0;color:#1e293b;border-bottom-left-radius:5px}
+.gemmaComposerWrap{flex:0 0 auto;border-top:1px solid #e2e8f0;background:#fff;padding:8px 10px 7px}
+.gemmaComposer{display:flex;gap:8px}
+.gemmaComposer input{flex:1;min-width:0;height:40px;border:1px solid #cbd5e1;border-radius:13px;padding:0 12px;background:#fff;outline:none;color:#0f172a}
+.gemmaComposer input:focus{border-color:#10b981;box-shadow:0 0 0 3px rgba(16,185,129,.1)}
+.gemmaComposer>button{height:40px;border:0;border-radius:13px;padding:0 15px;background:#059669;color:#fff;font-weight:800}
+.gemmaComposer>button:disabled{opacity:.5}
+.gemmaComposerMeta{min-height:26px;padding:6px 2px 0;display:flex;align-items:center;justify-content:space-between;gap:10px;color:#64748b;font-size:10px}
+.gemmaComposerActions{display:flex;align-items:center;gap:8px}
+.gemmaComposerActions button,.gemmaComposerActions a{border:0;background:transparent;padding:0;color:#64748b;text-decoration:none;font-size:10px;font-weight:700}
+.gemmaComposerActions button:hover,.gemmaComposerActions a:hover{color:#059669}
+
+.gemmaQuickLinks{max-width:1480px;margin:0 auto;padding:38px 24px 46px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;background:#fff}
+.gemmaQuickLinks>div{border:1px solid #e2e8f0;border-radius:20px;padding:18px;background:#fff}
+.gemmaQuickLinks strong{display:block;font-size:16px;color:#0f172a}
+.gemmaQuickLinks span{display:block;margin-top:6px;color:#64748b;font-size:13px;line-height:1.5}
+.gemmaQuickLinks a{display:inline-flex;margin-top:13px;color:#047857;font-size:13px;font-weight:800;text-decoration:none}
+.gemmaQuickLinks a:hover{text-decoration:underline}
+.gemmaFooter{border-top:1px solid #e2e8f0;background:#fff;color:#64748b;font-size:13px}
+.gemmaFooterInner{max-width:1480px;margin:0 auto;padding:24px;display:flex;justify-content:space-between;gap:12px}
+
+@media(max-width:1180px) and (min-width:768px){
+ .gemmaHeroContainer{grid-template-columns:minmax(0,.8fr) minmax(500px,1.2fr);gap:30px}
+}
+@media(max-width:767px){
+ .gemmaPublicHeaderInner{min-height:58px;padding:0 12px}
+ .gemmaLogoMain{font-size:18px}.gemmaLogoSub{font-size:10px;margin-top:4px}
+ .gemmaPublicNav{gap:12px}.gemmaPublicNavLink{display:none}.gemmaCustomerLink{min-height:36px;padding:0 13px;font-size:12px}
+ .gemmaHeroSection{padding:6px 9px 10px;overflow:visible}
+ .gemmaHeroContainer{width:100%;height:auto;min-height:0;margin:0;padding:0;display:flex;flex-direction:column;gap:7px}
+ .gemmaPresentation{width:100%;max-width:520px;margin:0 auto;text-align:center}
+ .gemmaEyebrow{font-size:9px;line-height:1;letter-spacing:.16em}
+ .gemmaHeroTitle{margin:5px 0 0;font-size:clamp(24px,7vw,32px);line-height:1}
+ .gemmaHeroTitle br{display:none}
+ .gemmaHeroDescription{margin:6px auto 0;max-width:390px;font-size:12.5px;line-height:1.35}
+ .gemmaHeroActions,.gemmaHeroCredit{display:none}
+ .gemmaAssistantPanel{width:100%;max-width:520px;height:min(660px,max(470px,calc(100svh - 9rem)));min-height:0;margin:0 auto;border-radius:22px;box-shadow:0 20px 55px rgba(15,23,42,.12)}
+ .gemmaPanelHeader{position:relative;top:auto;right:auto;min-height:52px;padding:8px 14px;border-bottom:1px solid #e2e8f0;background:rgba(255,255,255,.97);display:flex;align-items:center;justify-content:space-between;gap:12px}
+ .gemmaIdentity{min-width:0;display:flex;flex-direction:column}.gemmaIdentity strong{color:#0f172a;font-size:15px}.gemmaIdentity span{margin-top:2px;color:#64748b;font-size:10px}
+ .gemmaStatus{padding:7px 9px;background:#fff;box-shadow:none;font-size:10px;gap:6px}.gemmaStatusDot{width:8px;height:8px}
+ .gemmaAvatarArea{flex:0 1 55%;height:auto;min-height:0}
+ .gemmaAvatarPosition{top:-118px;height:calc(100% + 118px)}
+ .gemmaChatArea{flex:1 1 45%;min-height:0}
+ .gemmaMessages{font-size:12px;padding:9px 10px 6px;gap:7px}
+ .gemmaMessage{padding:8px 10px}
+ .gemmaComposerWrap{padding:6px 7px 5px}
+ .gemmaComposer input,.gemmaComposer>button{height:36px}
+ .gemmaComposer input{font-size:12px}.gemmaComposer>button{font-size:12px;padding:0 12px}
+ .gemmaComposerMeta>div:first-child{display:none}
+ .gemmaComposerMeta{justify-content:flex-end}
+ .gemmaQuickLinks{padding:18px 12px 24px;grid-template-columns:1fr;gap:9px}
+ .gemmaQuickLinks>div{padding:14px}
+ .gemmaFooterInner{padding:18px 14px;flex-direction:column}
+}
