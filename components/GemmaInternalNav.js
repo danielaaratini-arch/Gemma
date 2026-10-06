@@ -8,11 +8,9 @@ const adminItems = [
   ["/backoffice", "Backoffice"],
   ["/admin/users", "Accessi"],
   ["/admin/faults", "Alert fault"],
-  ["/admin/memory", "Memory"],
   ["/admin/gradimento", "Gradimento"],
   ["/admin/knowledge", "Knowledge"],
   ["/admin/no-match", "No Match"],
-  ["/conversations", "Conversazioni"],
   ["/reports", "Report"],
 ];
 
