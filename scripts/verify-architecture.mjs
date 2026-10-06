@@ -182,8 +182,8 @@ if (!knowledge.includes("retrieveKnowledgeDetailed")) {
   failures.push("Retrieval Knowledge Gemma non espone il risultato dettagliato.");
 }
 
-if (!knowledge.includes("service-scoped") || !knowledge.includes("general-fallback")) {
-  failures.push("Retrieval Fisso/Mobile senza scope o fallback generale.");
+if (!knowledge.includes("service-scoped") || !knowledge.includes("scoped-empty")) {
+  failures.push("Retrieval Fisso/Mobile senza scope di servizio.");
 }
 
 if (!chat.includes("knowledgeServiceHint(previousState)")) {
@@ -192,6 +192,14 @@ if (!chat.includes("knowledgeServiceHint(previousState)")) {
 
 if (!chat.includes("Punto in sospeso:") || !chat.includes("state?.checks")) {
   failures.push("Il retrieval non usa il contesto diagnostico persistito.");
+}
+
+if (!chat.includes("MOBILE_TECHNICAL") || !chat.includes("FIXED_TECHNICAL")) {
+  failures.push("Routing semantico Fisso/Mobile verso backoffice mancante.");
+}
+
+if (!store.includes("Gemma non ha ancora determinato il reparto corretto")) {
+  failures.push("I ticket senza reparto possono ancora entrare nel backoffice.");
 }
 
 if (failures.length) {
