@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 
 const adminItems = [
   ["/admin", "Dashboard"],
+  ["/backoffice", "Backoffice"],
   ["/admin/users", "Accessi"],
   ["/admin/faults", "Alert fault"],
   ["/admin/memory", "Memory"],
