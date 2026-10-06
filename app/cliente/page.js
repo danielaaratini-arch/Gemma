@@ -39,6 +39,8 @@ function CustomerAreaBody({ user, logout }) {
   const [pushState, setPushState] = useState("loading");
   const [pushBusy, setPushBusy] = useState(false);
   const [pushError, setPushError] = useState("");
+  const [verificationBusy, setVerificationBusy] = useState(false);
+  const [verificationMessage, setVerificationMessage] = useState("");
   const pushPublicKeyRef = useRef("");
   const pushRegistrationRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -216,6 +218,39 @@ function CustomerAreaBody({ user, logout }) {
     setMicError("");
     void loadDetail(selectedId);
   }, [selectedId]);
+
+  async function resendEmailVerification() {
+    if (verificationBusy || user?.emailVerified) return;
+
+    setVerificationBusy(true);
+    setVerificationMessage("");
+
+    try {
+      const response = await fetch(
+        "/api/gemma/auth/resend-verification",
+        { method: "POST" },
+      );
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data?.error || "Invio verifica non riuscito.");
+      }
+
+      setVerificationMessage(
+        data?.alreadyVerified
+          ? "Email già verificata."
+          : "Ti abbiamo inviato un nuovo link di verifica.",
+      );
+    } catch (error) {
+      setVerificationMessage(
+        error instanceof Error
+          ? error.message
+          : "Invio verifica non riuscito.",
+      );
+    } finally {
+      setVerificationBusy(false);
+    }
+  }
 
   async function enablePushNotifications() {
     if (!pushSupported || pushBusy) return;
@@ -520,6 +555,27 @@ function CustomerAreaBody({ user, logout }) {
       <GemmaCustomerHeader user={user} onLogout={logout} />
 
       <section className="gemmaCustomerContent">
+        {user?.emailVerified ? null : (
+          <section className="conversationCard">
+            <div className="panelTitle">Verifica il tuo indirizzo email</div>
+            <p>
+              Conferma {user?.email || "la tua email"} per registrare nei ticket
+              un recapito verificato.
+            </p>
+            {verificationMessage ? (
+              <div className="ratingThanks">{verificationMessage}</div>
+            ) : null}
+            <button
+              type="button"
+              className="secondaryAction"
+              disabled={verificationBusy}
+              onClick={() => void resendEmailVerification()}
+            >
+              {verificationBusy ? "Invio…" : "Invia di nuovo il link"}
+            </button>
+          </section>
+        )}
+
         <div className="portalGrid">
           <aside className="ticketListPanel">
             <div className="panelTitle">Le tue segnalazioni</div>
