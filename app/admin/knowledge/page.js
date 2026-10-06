@@ -477,10 +477,10 @@ function KnowledgeBody({ user, logout }) {
                   <option value="">Generale</option>
                   <option value="MOBILE">Mobile</option>
                   <option value="FIXED_NETWORK">Rete fissa</option>
-                  <option value="EMAIL">Email</option>
-                  <option value="PEC">PEC</option>
-                  <option value="ADMINISTRATIVE">Amministrativo</option>
-                  <option value="COMMERCIAL">Commerciale</option>
+                  <option value="EMAIL">Email / PEC</option>
+                  <option value="DOMAINS">Domini</option>
+                  <option value="ADMINISTRATIVE">Commerciale / amministrativo</option>
+                  <option value="OTHER">FAQ / altro</option>
                 </select>
               </label>
 
