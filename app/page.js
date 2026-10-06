@@ -310,7 +310,7 @@ export default function Home() {
             <p className="gemmaEyebrow">Tiscali Assistant AI Platform</p>
 
             <h1 className="gemmaHeroTitle">
-              Gemma, il nuovo volto
+              Gemma, il nuovo volto{" "}
               <br />
               dell&apos;assistenza <span>Tiscali.</span>
             </h1>
