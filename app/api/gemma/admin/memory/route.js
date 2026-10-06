@@ -8,12 +8,12 @@ import { requireRole } from "../../../../../lib/gemma-auth";
 
 export const runtime = "nodejs";
 
-function auth(request) {
-  return requireRole(request, ["ADMIN"]);
+async function auth(request) {
+  return await requireRole(request, ["ADMIN"]);
 }
 
 export async function GET(request) {
-  if (!auth(request)) return Response.json({ error: "Non autorizzato." }, { status: 401 });
+  if (!(await auth(request))) return Response.json({ error: "Non autorizzato." }, { status: 401 });
   const url = new URL(request.url);
   const customerKey = url.searchParams.get("customerKey") || "";
   if (!customerKey) return Response.json({ memories: [] });
@@ -21,7 +21,7 @@ export async function GET(request) {
 }
 
 export async function POST(request) {
-  if (!auth(request)) return Response.json({ error: "Non autorizzato." }, { status: 401 });
+  if (!(await auth(request))) return Response.json({ error: "Non autorizzato." }, { status: 401 });
   try {
     const body = await request.json();
     const memory = await createMemory({
@@ -39,7 +39,7 @@ export async function POST(request) {
 }
 
 export async function PATCH(request) {
-  if (!auth(request)) return Response.json({ error: "Non autorizzato." }, { status: 401 });
+  if (!(await auth(request))) return Response.json({ error: "Non autorizzato." }, { status: 401 });
   try {
     const body = await request.json();
     const memory = await updateMemory(String(body?.id || ""), body?.value);
@@ -54,7 +54,7 @@ export async function PATCH(request) {
 }
 
 export async function DELETE(request) {
-  if (!auth(request)) return Response.json({ error: "Non autorizzato." }, { status: 401 });
+  if (!(await auth(request))) return Response.json({ error: "Non autorizzato." }, { status: 401 });
   const body = await request.json();
   const ok = await deleteMemory(String(body?.id || ""));
   return ok
