@@ -1,10 +1,13 @@
-import { adminExists, readAuthSession } from "../../../../../lib/gemma-auth";
+import {
+  activeAuthSession,
+  adminExists,
+} from "../../../../../lib/gemma-auth";
 
 export const runtime = "nodejs";
 
 export async function GET(request) {
   return Response.json({
-    user: readAuthSession(request),
+    user: await activeAuthSession(request),
     adminExists: await adminExists(),
   });
 }
