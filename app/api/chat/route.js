@@ -356,6 +356,9 @@ export async function POST(request) {
               knowledgeServiceHint: knowledgeResult.serviceHint,
               knowledgeCurrentTurnService:
                 knowledgeResult.currentTurnService || null,
+              stateService: nextState.service,
+              stateDepartment: nextState.department,
+              stateIssue: nextState.issue,
               model,
             },
           });
