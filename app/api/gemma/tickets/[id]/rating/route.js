@@ -1,12 +1,18 @@
 import { saveRating } from "../../../../../../lib/gemma-admin";
-import { customerKeyFromRequest, getTicket } from "../../../../../../lib/gemma-store";
+import { customerContextFromRequest, getTicket } from "../../../../../../lib/gemma-store";
 
 export const runtime = "nodejs";
 
 export async function POST(request, context) {
   try {
     const { id } = await context.params;
-    const session = customerKeyFromRequest(request);
+    const session = await customerContextFromRequest(request);
+    if (session.invalid) {
+      return Response.json(
+        { error: "Sessione cliente non valida. Accedi di nuovo." },
+        { status: 401 },
+      );
+    }
     const ticket = await getTicket(id, session.key);
     if (!ticket) {
       return Response.json({ error: "Ticket non trovato." }, { status: 404 });
