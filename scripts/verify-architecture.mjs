@@ -109,7 +109,6 @@ const internalRequired = [
   "app/admin/users/page.js",
   "app/admin/faults/page.js",
   "app/admin/memory/page.js",
-  "app/admin/ai-router/page.js",
   "app/admin/gradimento/page.js",
   "app/admin/knowledge/page.js",
   "app/backoffice/performance/page.js",
