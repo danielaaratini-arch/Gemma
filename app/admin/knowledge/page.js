@@ -91,7 +91,10 @@ function KnowledgeBody({ user, logout }) {
       }
 
       const defaultSelection = (current?.proposals || [])
-        .filter((item) => item.action !== "ARCHIVE")
+        .filter(
+          (item) =>
+            item?.metadata_json?.safetyStatus === "SAFE",
+        )
         .map((item) => item.id);
       setSelectedIds(defaultSelection);
       await loadJobs();
@@ -217,6 +220,9 @@ function KnowledgeBody({ user, logout }) {
       create: rows.filter((item) => item.action === "CREATE").length,
       update: rows.filter((item) => item.action === "UPDATE").length,
       archive: rows.filter((item) => item.action === "ARCHIVE").length,
+      review: rows.filter(
+        (item) => item?.metadata_json?.safetyStatus !== "SAFE",
+      ).length,
       applied: rows.filter((item) => item.applied_at).length,
       failed: rows.filter((item) => item.apply_error).length,
     };
@@ -251,7 +257,9 @@ function KnowledgeBody({ user, logout }) {
             <p>
               Un solo corpus per Lia, Alda e Gemma. Gemma prepara la
               Preview in tabelle operative proprie e scrive sulla Knowledge
-              condivisa soltanto dopo conferma dell’Admin.
+              condivisa soltanto dopo conferma dell’Admin. Le proposte non
+              affidabili restano bloccate in revisione e i nuovi documenti
+              vengono creati come DRAFT.
             </p>
           </div>
 
@@ -353,6 +361,7 @@ function KnowledgeBody({ user, logout }) {
                   <span>Nuovi {proposalCounts.create}</span>
                   <span>Modificati {proposalCounts.update}</span>
                   <span>Da archiviare {proposalCounts.archive}</span>
+                  <span>Da rivedere {proposalCounts.review}</span>
                   <span>Errori fetch {job.errors || 0}</span>
                 </div>
               </div>
@@ -398,7 +407,8 @@ function KnowledgeBody({ user, logout }) {
                     onChange={() => toggleProposal(proposal.id)}
                     disabled={
                       Boolean(busy) ||
-                      job.status !== "PREVIEW_READY"
+                      job.status !== "PREVIEW_READY" ||
+                      proposal?.metadata_json?.safetyStatus !== "SAFE"
                     }
                   />
 
@@ -411,8 +421,19 @@ function KnowledgeBody({ user, logout }) {
                     <small>
                       {proposal.source_name} · {proposal.source_url}
                     </small>
-                    {proposal.apply_error ? (
+                    {proposal?.metadata_json?.safetyStatus !== "SAFE" ? (
+                      <em>
+                        Revisione richiesta:{" "}
+                        {proposal?.metadata_json?.safetyReason ||
+                          "controllo manuale necessario"}
+                      </em>
+                    ) : proposal.apply_error ? (
                       <em>{proposal.apply_error}</em>
+                    ) : proposal.action === "CREATE" ? (
+                      <em>
+                        Verrà creato come DRAFT: sarà visibile nella Knowledge
+                        ma non usato dagli assistenti finché non viene attivato.
+                      </em>
                     ) : null}
                   </span>
                 </label>
