@@ -20,7 +20,23 @@ const REPLY_STATUSES = [
   "WAITING_DEPARTMENT",
   "RESOLVED",
 ];
+const STATUS_LABELS = {
+  OPEN: "Aperto",
+  TAKEN_IN_CHARGE: "Preso in carico",
+  IN_PROGRESS: "In lavorazione",
+  WAITING_CUSTOMER: "In attesa del cliente",
+  WAITING_DEPARTMENT: "In attesa del reparto",
+  RESOLVED: "Risolto",
+  CLOSED: "Chiuso",
+};
+
 const PRIORITIES = ["LOW", "MEDIUM", "HIGH"];
+const PRIORITY_LABELS = {
+  LOW: "Bassa",
+  MEDIUM: "Media",
+  HIGH: "Alta",
+};
+
 const DEPARTMENTS = [
   "MOBILE_TECHNICAL",
   "FIXED_TECHNICAL",
@@ -32,6 +48,30 @@ const DEPARTMENTS = [
   "BILLING",
   "OTHER",
 ];
+
+const DEPARTMENT_LABELS = {
+  MOBILE_TECHNICAL: "Tecnico Mobile",
+  FIXED_TECHNICAL: "Tecnico Fisso",
+  ADMINISTRATIVE: "Amministrativo",
+  COMMERCIAL: "Commerciale",
+  VENDITE: "Vendite",
+  EMAIL: "Email",
+  PEC: "PEC",
+  BILLING: "Fatturazione",
+  OTHER: "Altro",
+};
+
+function statusLabel(value) {
+  return STATUS_LABELS[value] || value || "—";
+}
+
+function priorityLabel(value) {
+  return PRIORITY_LABELS[value] || value || "—";
+}
+
+function departmentLabel(value) {
+  return DEPARTMENT_LABELS[value] || value || "—";
+}
 
 function when(value) {
   return value
@@ -297,7 +337,7 @@ function BackofficeBody({ user, logout }) {
             <option value="ACTIVE">Attivi</option>
             <option value="ALL">Tutti</option>
             {STATUSES.map((value) => (
-              <option value={value} key={value}>{value}</option>
+              <option value={value} key={value}>{statusLabel(value)}</option>
             ))}
           </select>
 
@@ -305,7 +345,7 @@ function BackofficeBody({ user, logout }) {
             <option value="ALL">Tutti i reparti</option>
             <option value="UNASSIGNED">Non assegnati</option>
             {DEPARTMENTS.map((value) => (
-              <option value={value} key={value}>{value}</option>
+              <option value={value} key={value}>{departmentLabel(value)}</option>
             ))}
           </select>
 
@@ -341,11 +381,11 @@ function BackofficeBody({ user, logout }) {
                 >
                   <div className="ticketRowTop">
                     <strong>#{String(ticket.number).padStart(6, "0")}</strong>
-                    <span className="statusPill">{ticket.status}</span>
+                    <span className="statusPill">{statusLabel(ticket.status)}</span>
                   </div>
                   <p>{ticket.state_json?.issue || ticket.title || "Segnalazione"}</p>
                   <small>
-                    {ticket.customer_name || "Cliente"} · {ticket.department || "OTHER"}
+                    {ticket.customer_name || "Cliente"} · {departmentLabel(ticket.department || "OTHER")}
                   </small>
                   <small>{when(ticket.updated_at)}</small>
                 </button>
@@ -379,7 +419,7 @@ function BackofficeBody({ user, logout }) {
                     <h2>{detail.state_json?.issue || "Segnalazione"}</h2>
                     <small>{detail.customer_name}</small>
                   </div>
-                  <span className="statusPill">{detail.status}</span>
+                  <span className="statusPill">{statusLabel(detail.status)}</span>
                 </div>
 
                 <TicketSummary ticket={detail} />
@@ -494,7 +534,7 @@ function BackofficeBody({ user, logout }) {
                       onChange={(event) => setReplyStatus(event.target.value)}
                     >
                       {REPLY_STATUSES.map((value) => (
-                        <option value={value} key={value}>{value}</option>
+                        <option value={value} key={value}>{statusLabel(value)}</option>
                       ))}
                     </select>
                     <button
@@ -533,19 +573,19 @@ function BackofficeBody({ user, logout }) {
 
                   <label>Stato
                     <select value={detail.status} onChange={(event)=>void patchTicket({status:event.target.value})}>
-                      {STATUSES.map((value)=><option key={value}>{value}</option>)}
+                      {STATUSES.map((value)=><option value={value} key={value}>{statusLabel(value)}</option>)}
                     </select>
                   </label>
 
                   <label>Priorità
                     <select value={detail.priority} onChange={(event)=>void patchTicket({priority:event.target.value})}>
-                      {PRIORITIES.map((value)=><option key={value}>{value}</option>)}
+                      {PRIORITIES.map((value)=><option value={value} key={value}>{priorityLabel(value)}</option>)}
                     </select>
                   </label>
 
                   <label>Reparto
                     <select value={detail.department || "OTHER"} onChange={(event)=>void patchTicket({department:event.target.value})}>
-                      {DEPARTMENTS.map((value)=><option key={value}>{value}</option>)}
+                      {DEPARTMENTS.map((value)=><option value={value} key={value}>{departmentLabel(value)}</option>)}
                     </select>
                   </label>
 
