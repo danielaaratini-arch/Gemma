@@ -7,7 +7,8 @@
     "build": "node scripts/prepare-avatar.mjs && next build",
     "start": "next start",
     "test": "node scripts/verify-architecture.mjs",
-    "load:smoke": "node scripts/load-smoke.mjs"
+    "load:smoke": "node scripts/load-smoke.mjs",
+    "migrate:gemma": "node scripts/migrate-gemma.mjs"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.7",
