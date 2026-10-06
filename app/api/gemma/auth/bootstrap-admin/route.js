@@ -4,6 +4,16 @@ export const runtime = "nodejs";
 
 export async function POST(request) {
   try {
+    if (
+      process.env.VERCEL_ENV === "production" &&
+      String(process.env.GEMMA_ALLOW_ADMIN_BOOTSTRAP || "").toLowerCase() !==
+        "true"
+    ) {
+      return Response.json(
+        { error: "Bootstrap amministratore disabilitato in production." },
+        { status: 403 },
+      );
+    }
     if (await adminExists()) {
       return Response.json(
         { error: "Amministratore già configurato." },
