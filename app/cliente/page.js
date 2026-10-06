@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import GemmaCustomerHeader from "../../components/GemmaCustomerHeader";
 import TicketSummary from "../../components/TicketSummary";
 
@@ -20,6 +20,8 @@ export default function CustomerArea() {
   const [busy, setBusy] = useState(false);
   const [uploadBusy, setUploadBusy] = useState(false);
   const [uploadError, setUploadError] = useState("");
+  const [pendingFiles, setPendingFiles] = useState([]);
+  const fileInputRef = useRef(null);
 
   async function loadTickets() {
     await fetch("/api/gemma/session", { cache: "no-store" });
@@ -50,62 +52,107 @@ export default function CustomerArea() {
     void loadDetail(selectedId);
   }, [selectedId]);
 
-  async function uploadAttachments(event) {
-    const files = Array.from(event.target.files || []);
+  function chooseAttachments(event) {
+    const selected = Array.from(event.target.files || []);
     event.target.value = "";
-    if (!selectedId || files.length === 0 || uploadBusy) return;
+    setUploadError("");
 
-    setUploadBusy(true);
+    const next = [...pendingFiles, ...selected].slice(0, 5);
+
+    for (const file of next) {
+      if (file.size > 5 * 1024 * 1024) {
+        setUploadError("Ogni file può avere una dimensione massima di 5 MB.");
+        return;
+      }
+    }
+
+    const total = next.reduce((sum, file) => sum + Number(file.size || 0), 0);
+    if (total > 10 * 1024 * 1024) {
+      setUploadError("Gli allegati selezionati superano il limite complessivo di 10 MB.");
+      return;
+    }
+
+    setPendingFiles(next);
+  }
+
+  function removePendingFile(index) {
+    setPendingFiles((current) =>
+      current.filter((_, fileIndex) => fileIndex !== index),
+    );
+  }
+
+  function formatFileSize(size) {
+    if (size < 1024 * 1024) return Math.max(1, Math.round(size / 1024)) + " KB";
+    return (size / (1024 * 1024)).toFixed(1) + " MB";
+  }
+
+  async function sendReply(event) {
+    event.preventDefault();
+    const text = reply.trim();
+    if (
+      !selectedId ||
+      busy ||
+      uploadBusy ||
+      (!text && pendingFiles.length === 0)
+    ) {
+      return;
+    }
+
+    setBusy(true);
+    setUploadBusy(pendingFiles.length > 0);
     setUploadError("");
 
     try {
-      const formData = new FormData();
-      for (const file of files) formData.append("files", file);
+      if (text) {
+        const messageResponse = await fetch(
+          "/api/gemma/tickets/" + selectedId + "/messages",
+          {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({
+              role: "CUSTOMER",
+              authorName: "Cliente",
+              content: text,
+            }),
+          },
+        );
 
-      const response = await fetch(
-        "/api/gemma/tickets/" + selectedId + "/attachments",
-        {
-          method: "POST",
-          body: formData,
-        },
-      );
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data?.error || "Caricamento non riuscito.");
+        if (!messageResponse.ok) {
+          const data = await messageResponse.json().catch(() => ({}));
+          throw new Error(data?.error || "Messaggio non inviato.");
+        }
       }
 
+      if (pendingFiles.length > 0) {
+        const formData = new FormData();
+        for (const file of pendingFiles) formData.append("files", file);
+
+        const uploadResponse = await fetch(
+          "/api/gemma/tickets/" + selectedId + "/attachments",
+          {
+            method: "POST",
+            body: formData,
+          },
+        );
+        const data = await uploadResponse.json().catch(() => ({}));
+
+        if (!uploadResponse.ok) {
+          throw new Error(data?.error || "Allegati non inviati.");
+        }
+      }
+
+      setReply("");
+      setPendingFiles([]);
       await Promise.all([loadDetail(selectedId), loadTickets()]);
     } catch (error) {
       setUploadError(
         error instanceof Error
           ? error.message
-          : "Caricamento non riuscito.",
+          : "Invio non riuscito.",
       );
     } finally {
-      setUploadBusy(false);
-    }
-  }
-
-  async function sendReply(event) {
-    event.preventDefault();
-    if (!selectedId || !reply.trim() || busy) return;
-
-    setBusy(true);
-    try {
-      await fetch("/api/gemma/tickets/" + selectedId + "/messages", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          role: "CUSTOMER",
-          authorName: "Cliente",
-          content: reply.trim(),
-        }),
-      });
-      setReply("");
-      await Promise.all([loadDetail(selectedId), loadTickets()]);
-    } finally {
       setBusy(false);
+      setUploadBusy(false);
     }
   }
 
@@ -119,6 +166,14 @@ export default function CustomerArea() {
       ...(detail.ticketMessages || []).map((item) => ({
         ...item,
         source: "ticket",
+      })),
+      ...(detail.attachments || []).map((item) => ({
+        id: "attachment-" + item.id,
+        role: "CUSTOMER",
+        content: "",
+        created_at: item.created_at,
+        source: "attachment",
+        attachment: item,
       })),
     ].sort(
       (left, right) =>
@@ -177,50 +232,6 @@ export default function CustomerArea() {
 
                 <TicketSummary ticket={detail} />
 
-                <section className="conversationCard attachmentCard">
-                  <div className="panelTitle">Allegati</div>
-
-                  <div className="attachmentList">
-                    {(detail.attachments || []).length === 0 ? (
-                      <span className="attachmentEmpty">Nessun allegato.</span>
-                    ) : (
-                      (detail.attachments || []).map((file) => (
-                        <a
-                          key={file.id}
-                          className="attachmentItem"
-                          href={file.url}
-                          target="_blank"
-                          rel="noreferrer"
-                        >
-                          <span>📎 {file.original_name}</span>
-                          <small>
-                            {Math.max(1, Math.round(Number(file.size_bytes || 0) / 1024))} KB
-                          </small>
-                        </a>
-                      ))
-                    )}
-                  </div>
-
-                  <label className="attachmentUpload">
-                    {uploadBusy ? "Caricamento…" : "Allega documenti"}
-                    <input
-                      type="file"
-                      multiple
-                      disabled={uploadBusy}
-                      accept=".pdf,.txt,.rtf,.csv,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png,.gif,.webp,.heic,.heif,.bmp,.tif,.tiff,.mp3,.m4a,.aac,.wav,.ogg,.oga,.webm,.amr,.mp4,.mov,.m4v,.3gp,.3g2,.mpeg,.mpg,.avi,.mkv"
-                      onChange={uploadAttachments}
-                    />
-                  </label>
-
-                  <small className="attachmentLimits">
-                    Max 5 file alla volta · 5 MB per file · 10 MB per ticket
-                  </small>
-
-                  {uploadError ? (
-                    <p className="attachmentError">{uploadError}</p>
-                  ) : null}
-                </section>
-
                 <section className="conversationCard">
                   <div className="panelTitle">Conversazione e aggiornamenti</div>
                   <div className="ticketMessages">
@@ -241,19 +252,118 @@ export default function CustomerArea() {
                                 : message.author_name || "Backoffice"}{" "}
                             · {dateTime(message.created_at)}
                           </div>
-                          <div>{message.content}</div>
+                          {message.source === "attachment" ? (
+                            <a
+                              className="chatAttachmentBubble"
+                              href={message.attachment.url}
+                              target="_blank"
+                              rel="noreferrer"
+                            >
+                              <span className="chatAttachmentIcon" aria-hidden="true">
+                                📎
+                              </span>
+                              <span className="chatAttachmentInfo">
+                                <strong>{message.attachment.original_name}</strong>
+                                <small>
+                                  {formatFileSize(
+                                    Number(message.attachment.size_bytes || 0),
+                                  )}
+                                </small>
+                              </span>
+                            </a>
+                          ) : (
+                            <div>{message.content}</div>
+                          )}
                         </div>
                       );
                     })}
                   </div>
 
-                  <form className="ticketReply" onSubmit={sendReply}>
-                    <input
-                      value={reply}
-                      onChange={(event) => setReply(event.target.value)}
-                      placeholder="Scrivi al backoffice…"
-                    />
-                    <button disabled={busy || !reply.trim()}>Invia</button>
+                  <form className="ticketChatComposer" onSubmit={sendReply}>
+                    {pendingFiles.length > 0 ? (
+                      <div className="ticketComposerFiles">
+                        {pendingFiles.map((file, index) => (
+                          <div
+                            className="ticketComposerFileChip"
+                            key={file.name + "-" + file.size + "-" + index}
+                          >
+                            <span className="ticketComposerFileIcon" aria-hidden="true">
+                              📎
+                            </span>
+                            <span className="ticketComposerFileInfo">
+                              <strong>{file.name}</strong>
+                              <small>{formatFileSize(file.size)}</small>
+                            </span>
+                            <button
+                              type="button"
+                              className="ticketComposerFileRemove"
+                              onClick={() => removePendingFile(index)}
+                              aria-label={"Rimuovi " + file.name}
+                            >
+                              ×
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    ) : null}
+
+                    <div className="ticketComposerRow">
+                      <button
+                        type="button"
+                        className="ticketAttachButton"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={busy || uploadBusy || pendingFiles.length >= 5}
+                        aria-label="Allega file"
+                        title="Allega file"
+                      >
+                        <svg
+                          aria-hidden="true"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <path d="M21.44 11.05 12.25 20.24a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
+                        </svg>
+                      </button>
+
+                      <input
+                        ref={fileInputRef}
+                        className="ticketFileInput"
+                        type="file"
+                        multiple
+                        accept=".pdf,.txt,.rtf,.csv,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png,.gif,.webp,.heic,.heif,.bmp,.tif,.tiff,.mp3,.m4a,.aac,.wav,.ogg,.oga,.webm,.amr,.mp4,.mov,.m4v,.3gp,.3g2,.mpeg,.mpg,.avi,.mkv"
+                        onChange={chooseAttachments}
+                      />
+
+                      <input
+                        className="ticketComposerText"
+                        value={reply}
+                        onChange={(event) => setReply(event.target.value)}
+                        placeholder="Scrivi un messaggio…"
+                      />
+
+                      <button
+                        className="ticketSendButton"
+                        disabled={
+                          busy ||
+                          uploadBusy ||
+                          (!reply.trim() && pendingFiles.length === 0)
+                        }
+                      >
+                        {busy || uploadBusy ? "…" : "Invia"}
+                      </button>
+                    </div>
+
+                    <div className="ticketComposerHint">
+                      Allegati: max 5 file · 5 MB per file · 10 MB per ticket
+                    </div>
+
+                    {uploadError ? (
+                      <p className="attachmentError">{uploadError}</p>
+                    ) : null}
                   </form>
                 </section>
               </>
