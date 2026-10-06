@@ -48,7 +48,7 @@ export async function GET(request) {
 
     const staff =
       scope === "all"
-        ? requireRole(request, ["ADMIN", "OPERATOR"])
+        ? await requireRole(request, ["ADMIN", "OPERATOR"])
         : null;
 
     if (scope === "all" && !staff) {
