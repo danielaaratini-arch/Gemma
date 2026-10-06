@@ -10,13 +10,15 @@ button,input{font:inherit}button{cursor:pointer}
 .avatarBox{flex:1;min-height:0;margin:8px -10px -4px;position:relative}
 .badge{position:absolute;left:18px;bottom:20px;padding:9px 12px;border-radius:999px;background:rgba(255,255,255,.84);border:1px solid var(--line);font-size:12px;box-shadow:0 8px 24px rgba(37,31,53,.08)}
 .chat{display:flex;flex-direction:column;min-width:0;background:rgba(255,255,255,.46)}
-.chatHead{padding:22px 25px 14px;border-bottom:1px solid var(--line)}
+.chatHead{padding:18px 20px 13px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:14px}
 .chatHead strong{display:block;font-size:17px}.chatHead span{font-size:12px;color:var(--muted)}
+.headActions{display:flex;align-items:center;gap:7px;flex-wrap:wrap;justify-content:flex-end}
+.textButton{border:1px solid var(--line);background:rgba(255,255,255,.82);border-radius:999px;padding:7px 10px;color:#555866;font-size:11px}
+.textButton:hover{background:white}
 .messages{flex:1;overflow:auto;padding:22px 24px 8px;display:flex;flex-direction:column;gap:12px}
 .msg{max-width:82%;padding:12px 15px;border-radius:18px;line-height:1.5;font-size:14px;white-space:pre-wrap}
 .msg.user{margin-left:auto;background:#292b34;color:white;border-bottom-right-radius:6px}
 .msg.assistant{background:white;border:1px solid var(--line);border-bottom-left-radius:6px;box-shadow:0 8px 24px rgba(37,31,53,.04)}
-.msg.pending{color:var(--muted)}
 .composer{padding:14px 18px 18px;display:flex;gap:10px;border-top:1px solid var(--line);background:rgba(255,255,255,.64)}
 .composer input{flex:1;border:1px solid var(--line);background:white;border-radius:16px;padding:14px 15px;outline:none;min-width:0}
 .composer input:focus{border-color:rgba(123,97,255,.45);box-shadow:0 0 0 4px rgba(123,97,255,.08)}
@@ -26,6 +28,6 @@ button,input{font:inherit}button{cursor:pointer}
  .shell{padding:0}.app{height:100dvh;min-height:0;border:0;border-radius:0;display:flex;flex-direction:column}
  .hero{height:38dvh;min-height:250px;border-right:0;border-bottom:1px solid var(--line);padding:18px}
  .kicker{display:none}.avatarBox{margin:-5px -10px -8px}.badge{bottom:8px}
- .chat{height:62dvh}.chatHead{padding:13px 18px}.messages{padding:14px 14px 6px}
- .composer{padding:10px 12px 12px}.note{display:none}.msg{max-width:88%}
+ .chat{height:62dvh}.chatHead{padding:11px 12px}.chatHead span{display:none}.headActions{gap:5px}.textButton{padding:6px 8px}
+ .messages{padding:14px 14px 6px}.composer{padding:10px 12px 12px}.note{display:none}.msg{max-width:88%}
 }

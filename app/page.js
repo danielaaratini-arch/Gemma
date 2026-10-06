@@ -7,19 +7,55 @@ const GemmaAvatar = dynamic(() => import("../components/GemmaAvatar"), {
   ssr: false,
 });
 
+const STORAGE_KEY = "gemma-preview-conversation-v1";
 const welcome = {
   role: "assistant",
-  content:
-    "Ciao, sono Gemma. Dimmi pure cosa ti serve: seguirò il contesto senza costringerti in percorsi rigidi.",
+  content: "Ciao, sono Gemma. Come posso aiutarti oggi?",
 };
+
+function restoreConversation() {
+  if (typeof window === "undefined") return [welcome];
+
+  try {
+    const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
+    if (
+      Array.isArray(parsed) &&
+      parsed.length > 0 &&
+      parsed.every(
+        (message) =>
+          message &&
+          (message.role === "user" || message.role === "assistant") &&
+          typeof message.content === "string",
+      )
+    ) {
+      return parsed.slice(-40);
+    }
+  } catch {}
+
+  return [welcome];
+}
 
 export default function Home() {
   const [messages, setMessages] = useState([welcome]);
+  const [hydrated, setHydrated] = useState(false);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const [speaking, setSpeaking] = useState(false);
   const [metrics, setMetrics] = useState(null);
   const listRef = useRef(null);
+  const abortRef = useRef(null);
+
+  useEffect(() => {
+    setMessages(restoreConversation());
+    setHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(messages.slice(-40)));
+    } catch {}
+  }, [messages, hydrated]);
 
   useEffect(() => {
     listRef.current?.scrollTo({
@@ -27,6 +63,11 @@ export default function Home() {
       behavior: "smooth",
     });
   }, [messages, busy]);
+
+  function stopSpeech() {
+    if ("speechSynthesis" in window) speechSynthesis.cancel();
+    setSpeaking(false);
+  }
 
   function speak(text) {
     if (!("speechSynthesis" in window) || !text.trim()) return;
@@ -41,22 +82,39 @@ export default function Home() {
     speechSynthesis.speak(utterance);
   }
 
+  function newConversation() {
+    abortRef.current?.abort();
+    stopSpeech();
+    setBusy(false);
+    setMetrics(null);
+    setMessages([welcome]);
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+    } catch {}
+  }
+
   async function submit(event) {
     event.preventDefault();
     const question = input.trim();
     if (!question || busy) return;
 
-    const context = [...messages, { role: "user", content: question }];
+    stopSpeech();
+
+    const context = [...messages, { role: "user", content: question }].slice(-40);
     setMessages([...context, { role: "assistant", content: "" }]);
     setInput("");
     setBusy(true);
     setMetrics(null);
+
+    const controller = new AbortController();
+    abortRef.current = controller;
 
     try {
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ messages: context }),
+        signal: controller.signal,
       });
 
       if (!response.ok || !response.body) {
@@ -106,16 +164,20 @@ export default function Home() {
 
       if (answer.trim()) speak(answer);
     } catch (error) {
+      if (error?.name === "AbortError") return;
+
       setMessages((current) => {
         const next = [...current];
         next[next.length - 1] = {
           role: "assistant",
           content:
-            "La preview è online, ma il motore conversazionale non dispone ancora di tutte le variabili necessarie per rispondere.",
+            error?.message ||
+            "Ho avuto un problema momentaneo nel generare la risposta. Riprova.",
         };
         return next;
       });
     } finally {
+      abortRef.current = null;
       setBusy(false);
     }
   }
@@ -130,9 +192,10 @@ export default function Home() {
             TAAP <span>Gemma</span>
           </div>
           <div className="kicker">
-            Un unico interprete semantico, retrieval contestuale e nessuna
-            classificazione del linguaggio tramite regex.
+            Conversazione naturale, contesto continuo e knowledge consultata
+            senza scrivere sui sistemi di Lia o Alda.
           </div>
+
           <div className="avatarBox">
             <GemmaAvatar status={status} />
             <div className="badge">
@@ -147,15 +210,32 @@ export default function Home() {
 
         <section className="chat">
           <header className="chatHead">
-            <strong>Parla con Gemma</strong>
-            <span>
-              Preview isolata
-              {metrics?.totalMs
-                ? " · " + metrics.totalMs + " ms"
-                : metrics?.retrievalMs
-                  ? " · ricerca " + metrics.retrievalMs + " ms"
-                  : ""}
-            </span>
+            <div>
+              <strong>Parla con Gemma</strong>
+              <span>
+                Preview isolata
+                {metrics?.totalMs
+                  ? " · " + metrics.totalMs + " ms"
+                  : metrics?.retrievalMs
+                    ? " · ricerca " + metrics.retrievalMs + " ms"
+                    : ""}
+              </span>
+            </div>
+
+            <div className="headActions">
+              {speaking && (
+                <button className="textButton" onClick={stopSpeech} type="button">
+                  Ferma voce
+                </button>
+              )}
+              <button
+                className="textButton"
+                onClick={newConversation}
+                type="button"
+              >
+                Nuova chat
+              </button>
+            </div>
           </header>
 
           <div className="messages" ref={listRef}>
@@ -175,6 +255,7 @@ export default function Home() {
               onChange={(event) => setInput(event.target.value)}
               placeholder="Scrivi la tua richiesta…"
               autoComplete="off"
+              aria-label="Messaggio per Gemma"
             />
             <button className="send" disabled={busy || !input.trim()}>
               Invia
