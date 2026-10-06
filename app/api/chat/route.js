@@ -1,5 +1,8 @@
 import OpenAI from "openai";
-import { retrieveKnowledge, supportText } from "../../../lib/knowledge";
+import {
+  retrieveKnowledgeDetailed,
+  supportText,
+} from "../../../lib/knowledge";
 import {
   operationalContextText,
   retrieveGemmaOperationalContext,
@@ -48,7 +51,7 @@ STATO CONVERSAZIONALE
 Lo stato è privato e serve al riepilogo dinamico del ticket.
 Aggiornalo a ogni turno usando solo fatti espliciti o esiti realmente forniti dalla persona.
 - issue: problema/richiesta attuale
-- service: categoria di servizio
+- service: usa solo uno di questi valori canonici: MOBILE, FIXED, EMAIL, PEC, ADMINISTRATIVE, COMMERCIAL, OTHER
 - department: reparto corretto, se determinabile
 - facts: [{key,label,value}] fatti espliciti, senza duplicati
 - checks: [{key,label,value}] solo verifiche realmente effettuate con relativo esito
@@ -78,13 +81,35 @@ function sanitizeMessages(value) {
     .slice(-20);
 }
 
-function retrievalContext(messages) {
-  return messages
+function retrievalContext(messages, state) {
+  const recentUser = messages
     .filter((message) => message.role === "user")
     .slice(-5)
-    .map((message) => message.content)
+    .map((message) => message.content);
+
+  const stateContext = [
+    state?.issue ? "Problema: " + state.issue : null,
+    state?.service ? "Servizio: " + state.service : null,
+    state?.pending ? "Punto in sospeso: " + state.pending : null,
+    ...(state?.facts || []).map(
+      (item) => item.label + ": " + item.value,
+    ),
+    ...(state?.checks || []).slice(-8).map(
+      (item) => item.label + ": " + item.value,
+    ),
+  ].filter(Boolean);
+
+  return [...stateContext, ...recentUser]
     .join("\n")
-    .slice(0, 4000);
+    .slice(0, 5000);
+}
+
+function knowledgeServiceHint(state) {
+  if (state?.department === "MOBILE_TECHNICAL") return "MOBILE";
+  if (state?.department === "FIXED_TECHNICAL") return "FIXED";
+  if (state?.service === "MOBILE") return "MOBILE";
+  if (state?.service === "FIXED") return "FIXED";
+  return null;
 }
 
 function parseState(raw, previous) {
@@ -149,14 +174,16 @@ export async function POST(request) {
     );
 
     const retrievalStarted = performance.now();
-    const [hits, operationalContext] = await Promise.all([
-      retrieveKnowledge({
+    const [knowledgeResult, operationalContext] = await Promise.all([
+      retrieveKnowledgeDetailed({
         current: lastUser,
-        context: retrievalContext(messages),
+        context: retrievalContext(messages, previousState),
+        serviceHint: knowledgeServiceHint(previousState),
       }),
       retrieveGemmaOperationalContext(customer.key),
     ]);
     const retrievalMs = Math.round(performance.now() - retrievalStarted);
+    const hits = knowledgeResult.hits;
     const support = supportText(hits);
     const operationalSupport = operationalContextText(operationalContext);
 
@@ -187,6 +214,8 @@ export async function POST(request) {
           conversationId: conversation.id,
           retrievalMs,
           knowledgeHits: hits.length,
+          knowledgeMode: knowledgeResult.mode,
+          knowledgeServiceHint: knowledgeResult.serviceHint,
           model,
         });
 
@@ -286,6 +315,8 @@ export async function POST(request) {
               aiMs,
               totalMs,
               knowledgeHits: hits.length,
+              knowledgeMode: knowledgeResult.mode,
+              knowledgeServiceHint: knowledgeResult.serviceHint,
               model,
             },
           });
