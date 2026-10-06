@@ -280,6 +280,34 @@ if (!ticketRoute.includes('from "next/server"') || !ticketRoute.includes("after(
   failures.push("Notifiche ticket ancora bloccanti sulla risposta HTTP.");
 }
 
+if (!store.includes("push_subscription")) {
+  failures.push("Persistenza sottoscrizioni Web Push Gemma mancante.");
+}
+
+if (!fs.existsSync("lib/gemma-push.js")) {
+  failures.push("Servizio Web Push Gemma mancante.");
+}
+
+if (!fs.existsSync("app/api/gemma/push/route.js")) {
+  failures.push("API sottoscrizioni Web Push Gemma mancante.");
+}
+
+if (!fs.existsSync("public/gemma-push-sw.js")) {
+  failures.push("Service worker Web Push Gemma mancante.");
+}
+
+if (!read("app/cliente/page.js").includes("Attiva notifiche")) {
+  failures.push("Opt-in Web Push Area Cliente mancante.");
+}
+
+if (!ticketRoute.includes("notifyCustomerTicketStatus")) {
+  failures.push("I cambi stato ticket non inviano la push al cliente.");
+}
+
+if (!read("package.json").includes('"web-push"')) {
+  failures.push("Dipendenza Web Push standard mancante.");
+}
+
 if (failures.length) {
   console.error(failures.join("\n"));
   process.exit(1);
