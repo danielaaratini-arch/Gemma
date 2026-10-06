@@ -464,3 +464,152 @@ button,input{font:inherit}button{cursor:pointer}
   .gemmaMicButton{width:36px;height:36px;flex-basis:36px}
   .gemmaMicButton svg{width:16px;height:16px}
 }
+
+
+/* Customer authentication and safer Knowledge administration */
+.gemmaCustomerHeaderActions button{
+  border:1px solid #e2e8f0;
+  border-radius:11px;
+  background:#fff;
+  padding:8px 11px;
+  color:#475569;
+  font-size:12px;
+  font-weight:750;
+}
+.gemmaCustomerHeaderActions button:hover{background:#f8fafc}
+
+.customerAuthPage{
+  min-height:100dvh;
+  display:grid;
+  place-items:center;
+  padding:20px;
+  background:#f8fafc;
+}
+.customerAuthCard{
+  width:min(440px,100%);
+  border:1px solid #e2e8f0;
+  border-radius:22px;
+  background:#fff;
+  padding:24px;
+  box-shadow:0 24px 70px rgba(15,23,42,.10);
+}
+.customerAuthCard h1{
+  margin:4px 0 6px;
+  font-size:25px;
+  letter-spacing:-.03em;
+}
+.customerAuthCard>p{
+  color:#64748b;
+  font-size:12px;
+  line-height:1.5;
+}
+.customerAuthTabs{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:6px;
+  margin:18px 0 12px;
+  padding:4px;
+  border-radius:12px;
+  background:#f1f5f9;
+}
+.customerAuthTabs button{
+  border:0;
+  border-radius:9px;
+  background:transparent;
+  padding:8px;
+  color:#64748b;
+  font-size:11px;
+  font-weight:800;
+}
+.customerAuthTabs button.active{
+  background:#fff;
+  color:#047857;
+  box-shadow:0 2px 8px rgba(15,23,42,.08);
+}
+
+.knowledgeManualPanel{margin-bottom:14px}
+.knowledgeManualHead{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:14px;
+}
+.knowledgeManualHead p{
+  margin:4px 0 0;
+  color:#64748b;
+  font-size:11px;
+  line-height:1.45;
+}
+.knowledgeManualForm{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  margin-top:14px;
+}
+.knowledgeManualForm label{
+  display:flex;
+  flex-direction:column;
+  gap:5px;
+  color:#475569;
+  font-size:9px;
+  font-weight:800;
+  text-transform:uppercase;
+  letter-spacing:.05em;
+}
+.knowledgeManualForm input,
+.knowledgeManualForm select,
+.knowledgeManualForm textarea{
+  width:100%;
+  border:1px solid #cbd5e1;
+  border-radius:10px;
+  background:#fff;
+  padding:9px 10px;
+  color:#0f172a;
+  font:inherit;
+  font-size:12px;
+  outline:none;
+}
+.knowledgeManualForm textarea{resize:vertical}
+.knowledgeManualForm input:focus,
+.knowledgeManualForm select:focus,
+.knowledgeManualForm textarea:focus{
+  border-color:#10b981;
+  box-shadow:0 0 0 3px rgba(16,185,129,.10);
+}
+.knowledgeManualForm .span2{grid-column:1/-1}
+.knowledgeManualActions{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+}
+.knowledgeRowActions{
+  display:flex;
+  gap:5px;
+  flex-wrap:wrap;
+}
+.knowledgeRowActions button{
+  border:1px solid #e2e8f0;
+  border-radius:8px;
+  background:#fff;
+  padding:6px 8px;
+  color:#475569;
+  font-size:9px;
+  font-weight:800;
+}
+.knowledgeRowActions button:hover{
+  border-color:#10b981;
+  color:#047857;
+}
+.knowledgeTableHead,
+.knowledgeTableRow{
+  grid-template-columns:minmax(250px,2fr) 130px 145px 90px 55px 135px;
+}
+@media(max-width:800px){
+  .knowledgeManualHead{flex-direction:column}
+  .knowledgeManualForm{grid-template-columns:1fr}
+  .knowledgeManualForm .span2{grid-column:auto}
+  .knowledgeTableHead,
+  .knowledgeTableRow{
+    grid-template-columns:minmax(220px,1.8fr) 120px 120px 85px 50px 120px;
+  }
+}
