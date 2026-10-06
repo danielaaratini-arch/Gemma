@@ -1,0 +1,39 @@
+name: Gemma Preview CI
+
+on:
+  push:
+    branches:
+      - gemma-preview
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      NEXT_TELEMETRY_DISABLED: "1"
+      GEMMA_AUTH_SECRET: "ci-only-auth-secret-not-for-runtime"
+      GEMMA_KNOWLEDGE_WORKER_SECRET: "ci-only-worker-secret-not-for-runtime"
+      GEMMA_WEB_PUSH_PUBLIC_KEY: "ci-placeholder"
+      GEMMA_WEB_PUSH_PRIVATE_KEY: "ci-placeholder"
+      GEMMA_WEB_PUSH_SUBJECT: "https://example.invalid"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Node 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Architecture guard
+        run: npm test
+
+      - name: Production build
+        run: npm run build
