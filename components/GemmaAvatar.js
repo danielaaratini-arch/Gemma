@@ -70,9 +70,9 @@ function frameShoulderPortrait(model, camera, head, leftEye, rightEye) {
 
   // Ritratto stretto come Alda: testa interamente nel viewport e solo un tratto di spalle.
   const portraitHeight = Math.max(
-    headTopSpan * 3.15,
-    avatarSize.y * 0.26,
-    eyeDistance * 7.8,
+    headTopSpan * 2.9,
+    avatarSize.y * 0.235,
+    eyeDistance * 7.0,
   );
 
   const portraitWidth = Math.max(
@@ -86,10 +86,10 @@ function frameShoulderPortrait(model, camera, head, leftEye, rightEye) {
     portraitWidth /
     (2 * Math.tan(fov / 2) * Math.max(camera.aspect, 0.01));
 
-  const distance = Math.max(distanceForHeight, distanceForWidth) * 1.0;
+  const distance = Math.max(distanceForHeight, distanceForWidth) * 0.96;
   const target = new Vector3(
     headPosition.x,
-    eyeCenterY - portraitHeight * 0.055,
+    eyeCenterY - portraitHeight * 0.035,
     MathUtils.lerp(headPosition.z, eyeCenterZ, 0.35),
   );
 
