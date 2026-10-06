@@ -13,12 +13,12 @@ function unauthorized() {
 }
 
 export async function GET(request) {
-  if (!requireRole(request, ["ADMIN"])) return unauthorized();
+  if (!(await requireRole(request, ["ADMIN"]))) return unauthorized();
   return Response.json({ users: await listInternalUsers() });
 }
 
 export async function POST(request) {
-  if (!requireRole(request, ["ADMIN"])) return unauthorized();
+  if (!(await requireRole(request, ["ADMIN"]))) return unauthorized();
   try {
     const body = await request.json();
     const user = await createInternalUser(body || {});
@@ -32,7 +32,7 @@ export async function POST(request) {
 }
 
 export async function PATCH(request) {
-  if (!requireRole(request, ["ADMIN"])) return unauthorized();
+  if (!(await requireRole(request, ["ADMIN"]))) return unauthorized();
   try {
     const body = await request.json();
     const user = await updateInternalUser(String(body?.id || ""), body || {});
@@ -47,7 +47,7 @@ export async function PATCH(request) {
 }
 
 export async function DELETE(request) {
-  if (!requireRole(request, ["ADMIN"])) return unauthorized();
+  if (!(await requireRole(request, ["ADMIN"]))) return unauthorized();
   const body = await request.json();
   const ok = await deleteInternalUser(String(body?.id || ""));
   return ok
