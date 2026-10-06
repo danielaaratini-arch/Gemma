@@ -102,7 +102,7 @@ export default function AdminArea() {
             <div className="metricRow">
               <span>Knowledge read-only</span>
               <strong>
-                {health?.database?.readOnlyTransaction ? "Sì" : "No"}
+                {health?.database?.knowledgeReadOnlyTransaction ? "Sì" : "No"}
               </strong>
             </div>
             <div className="metricRow">
