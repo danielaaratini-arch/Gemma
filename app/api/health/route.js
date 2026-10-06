@@ -1,14 +1,18 @@
 import postgres from "postgres";
 import { ensureGemmaSchema } from "../../../lib/gemma-store";
+import { databaseConnectionProfile } from "../../../lib/db";
 
 export const runtime = "nodejs";
 
 export async function GET() {
+  const connectionProfile = databaseConnectionProfile();
   let database = {
     configured: Boolean(process.env.DATABASE_URL),
     reachable: false,
     knowledgeReadOnlyTransaction: false,
     gemmaSchemaReady: false,
+    connectionMode: connectionProfile.mode,
+    conservativePoolMode: connectionProfile.productionConservativeMode,
   };
 
   if (process.env.DATABASE_URL) {
@@ -41,6 +45,8 @@ export async function GET() {
         gemmaSchemaReady:
           schemaRows[0]?.conversation === true &&
           schemaRows[0]?.ticket === true,
+        connectionMode: connectionProfile.mode,
+        conservativePoolMode: connectionProfile.productionConservativeMode,
       };
     } catch (error) {
       console.error("Gemma health DB error", error);
