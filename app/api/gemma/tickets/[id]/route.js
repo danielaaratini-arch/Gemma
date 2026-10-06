@@ -1,7 +1,7 @@
 import { after } from "next/server";
 import {
   customerCookie,
-  customerKeyFromRequest,
+  customerContextFromRequest,
   getTicket,
   updateTicket,
 } from "../../../../../lib/gemma-store";
@@ -14,7 +14,13 @@ export const runtime = "nodejs";
 export async function GET(request, context) {
   try {
     const { id } = await context.params;
-    const session = customerKeyFromRequest(request);
+    const session = await customerContextFromRequest(request);
+    if (session.invalid) {
+      return Response.json(
+        { error: "Sessione cliente non valida. Accedi di nuovo." },
+        { status: 401 },
+      );
+    }
     const url = new URL(request.url);
     const staffView = url.searchParams.get("scope") === "staff";
     const staff = staffView
