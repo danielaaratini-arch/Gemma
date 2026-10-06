@@ -60,9 +60,19 @@ export async function GET() {
     aiConfigured: Boolean(process.env.OPENAI_API_KEY),
     database,
     isolation: {
-      sharedKnowledge: "read-only in chat/retrieval; admin-only Preview/Apply/Rollback can update the canonical Knowledge",
+      sharedKnowledge:
+        "read-only in chat/retrieval; admin-only Preview/Apply/Rollback/manual editing can update the canonical Knowledge",
       operationalWrites: "schema gemma",
       liaAldaOperationalWrites: 0,
+    },
+    attachmentStorage: {
+      mode:
+        process.env.BLOB_READ_WRITE_TOKEN || process.env.VERCEL_OIDC_TOKEN
+          ? "blob-capable"
+          : "database-preview-fallback",
+      productionDbFallbackAllowed:
+        String(process.env.GEMMA_ALLOW_DB_ATTACHMENTS || "").toLowerCase() ===
+        "true",
     },
   });
 }
