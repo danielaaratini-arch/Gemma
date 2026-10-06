@@ -5,7 +5,7 @@ export const runtime = "nodejs";
 
 export async function POST(request, context) {
   try {
-    const staff = requireRole(request, ["ADMIN", "OPERATOR"]);
+    const staff = await requireRole(request, ["ADMIN", "OPERATOR"]);
     if (!staff) {
       return Response.json({ error: "Non autorizzato." }, { status: 401 });
     }
