@@ -102,6 +102,15 @@ export default function Home() {
     setConversationId(localStorage.getItem(CONVERSATION_KEY));
     setHydrated(true);
     void fetch("/api/gemma/session", { cache: "no-store" });
+
+    void fetch("/api/gemma/auth/session", { cache: "no-store" })
+      .then((response) => response.json())
+      .then((data) => {
+        if (data?.user?.role === "CUSTOMER" && data.user.email) {
+          setNotificationEmail(data.user.email);
+        }
+      })
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -491,6 +500,12 @@ export default function Home() {
                         Il riepilogo raccolto da Gemma verrà passato al reparto{" "}
                         {ticketOffer.department || "competente"}.
                       </span>
+                      {ticketOffer.summary ? (
+                        <details className="ticketOfferSummary">
+                          <summary>Riepilogo della segnalazione</summary>
+                          <pre>{ticketOffer.summary}</pre>
+                        </details>
+                      ) : null}
                     </div>
                     <div className="ticketOfferActions">
                       <input
