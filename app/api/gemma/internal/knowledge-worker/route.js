@@ -3,7 +3,7 @@ import {
   advanceKnowledgeJob,
   knowledgeJobIsActive,
   requestKnowledgeWorker,
-} from "../../../../../../lib/gemma-knowledge-worker";
+} from "../../../../../lib/gemma-knowledge-worker";
 
 export const runtime = "nodejs";
 
