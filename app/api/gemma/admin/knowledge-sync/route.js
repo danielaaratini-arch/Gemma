@@ -11,12 +11,12 @@ import {
 
 export const runtime = "nodejs";
 
-function admin(request) {
-  return requireRole(request, ["ADMIN"]);
+async function admin(request) {
+  return await requireRole(request, ["ADMIN"]);
 }
 
 export async function GET(request) {
-  if (!admin(request)) {
+  if (!(await admin(request))) {
     return Response.json({ error: "Non autorizzato." }, { status: 401 });
   }
 
@@ -36,7 +36,7 @@ export async function GET(request) {
 }
 
 export async function POST(request) {
-  const user = admin(request);
+  const user = await admin(request);
   if (!user) {
     return Response.json({ error: "Non autorizzato." }, { status: 401 });
   }
