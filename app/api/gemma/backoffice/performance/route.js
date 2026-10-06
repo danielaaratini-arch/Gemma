@@ -4,7 +4,7 @@ import { requireRole } from "../../../../../lib/gemma-auth";
 export const runtime = "nodejs";
 
 export async function GET(request) {
-  const user = requireRole(request, ["ADMIN", "OPERATOR"]);
+  const user = await requireRole(request, ["ADMIN", "OPERATOR"]);
   if (!user) return Response.json({ error: "Non autorizzato." }, { status: 401 });
 
   const all = await performanceStats();
