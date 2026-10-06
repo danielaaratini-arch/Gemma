@@ -7,17 +7,18 @@ const GemmaAvatar = dynamic(() => import("../components/GemmaAvatar"), {
   ssr: false,
 });
 
+const welcome = {
+  role: "assistant",
+  content:
+    "Ciao, sono Gemma. Dimmi pure cosa ti serve: seguirò il contesto senza costringerti in percorsi rigidi.",
+};
+
 export default function Home() {
-  const [messages, setMessages] = useState([
-    {
-      role: "assistant",
-      content:
-        "Ciao, sono Gemma. Dimmi pure cosa ti serve: seguirò il contesto senza costringerti in percorsi rigidi.",
-    },
-  ]);
+  const [messages, setMessages] = useState([welcome]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const [speaking, setSpeaking] = useState(false);
+  const [metrics, setMetrics] = useState(null);
   const listRef = useRef(null);
 
   useEffect(() => {
@@ -28,7 +29,8 @@ export default function Home() {
   }, [messages, busy]);
 
   function speak(text) {
-    if (!("speechSynthesis" in window)) return;
+    if (!("speechSynthesis" in window) || !text.trim()) return;
+
     speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = "it-IT";
@@ -44,35 +46,75 @@ export default function Home() {
     const question = input.trim();
     if (!question || busy) return;
 
-    const nextMessages = [...messages, { role: "user", content: question }];
-    setMessages(nextMessages);
+    const context = [...messages, { role: "user", content: question }];
+    setMessages([...context, { role: "assistant", content: "" }]);
     setInput("");
     setBusy(true);
+    setMetrics(null);
 
     try {
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ messages: nextMessages }),
+        body: JSON.stringify({ messages: context }),
       });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data?.error || "Errore");
 
-      const answer = String(data.answer || "");
-      setMessages((current) => [
-        ...current,
-        { role: "assistant", content: answer },
-      ]);
-      speak(answer);
+      if (!response.ok || !response.body) {
+        const payload = await response.json().catch(() => ({}));
+        throw new Error(payload.error || "Errore");
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let answer = "";
+
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || "";
+
+        for (const line of lines) {
+          if (!line.trim()) continue;
+          const event = JSON.parse(line);
+
+          if (event.type === "metadata") {
+            setMetrics((current) => ({ ...(current || {}), ...event }));
+          }
+
+          if (event.type === "delta") {
+            answer += String(event.content || "");
+            setMessages((current) => {
+              const next = [...current];
+              next[next.length - 1] = { role: "assistant", content: answer };
+              return next;
+            });
+          }
+
+          if (event.type === "done") {
+            setMetrics((current) => ({ ...(current || {}), ...event }));
+          }
+
+          if (event.type === "error") {
+            throw new Error(event.error || "Errore");
+          }
+        }
+      }
+
+      if (answer.trim()) speak(answer);
     } catch (error) {
-      setMessages((current) => [
-        ...current,
-        {
+      setMessages((current) => {
+        const next = [...current];
+        next[next.length - 1] = {
           role: "assistant",
           content:
             "La preview è online, ma il motore conversazionale non dispone ancora di tutte le variabili necessarie per rispondere.",
-        },
-      ]);
+        };
+        return next;
+      });
     } finally {
       setBusy(false);
     }
@@ -88,8 +130,8 @@ export default function Home() {
             TAAP <span>Gemma</span>
           </div>
           <div className="kicker">
-            Nuova architettura conversazionale: comprensione del contesto,
-            poche regole e knowledge consultata in sola lettura.
+            Un unico interprete semantico, retrieval contestuale e nessuna
+            classificazione del linguaggio tramite regex.
           </div>
           <div className="avatarBox">
             <GemmaAvatar status={status} />
@@ -106,20 +148,25 @@ export default function Home() {
         <section className="chat">
           <header className="chatHead">
             <strong>Parla con Gemma</strong>
-            <span>Preview sperimentale isolata</span>
+            <span>
+              Preview isolata
+              {metrics?.totalMs
+                ? " · " + metrics.totalMs + " ms"
+                : metrics?.retrievalMs
+                  ? " · ricerca " + metrics.retrievalMs + " ms"
+                  : ""}
+            </span>
           </header>
 
           <div className="messages" ref={listRef}>
             {messages.map((message, index) => (
               <div key={index} className={"msg " + message.role}>
-                {message.content}
+                {message.content ||
+                  (busy && index === messages.length - 1
+                    ? "Sto verificando il contesto…"
+                    : "")}
               </div>
             ))}
-            {busy && (
-              <div className="msg assistant pending">
-                Sto verificando il contesto…
-              </div>
-            )}
           </div>
 
           <form className="composer" onSubmit={submit}>
@@ -133,8 +180,10 @@ export default function Home() {
               Invia
             </button>
           </form>
+
           <div className="note">
-            Questa preview non scrive sulla knowledge condivisa.
+            Knowledge condivisa in sola lettura. Nessuna scrittura sui dati di
+            Lia o Alda.
           </div>
         </section>
       </section>
