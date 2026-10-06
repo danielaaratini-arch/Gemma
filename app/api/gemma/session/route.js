@@ -1,6 +1,6 @@
 import {
   customerCookie,
-  customerKeyFromRequest,
+  customerContextFromRequest,
   ensureGemmaSchema,
 } from "../../../../lib/gemma-store";
 
@@ -9,7 +9,13 @@ export const runtime = "nodejs";
 export async function GET(request) {
   try {
     await ensureGemmaSchema();
-    const session = customerKeyFromRequest(request);
+    const session = await customerContextFromRequest(request);
+    if (session.invalid) {
+      return Response.json(
+        { error: "Sessione cliente non valida. Accedi di nuovo." },
+        { status: 401 },
+      );
+    }
     const response = Response.json({ ok: true, customerSession: true });
 
     if (session.isNew) {
