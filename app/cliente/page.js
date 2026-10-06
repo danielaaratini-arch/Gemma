@@ -24,7 +24,12 @@ export default function CustomerArea() {
   const [ratingScore, setRatingScore] = useState(5);
   const [ratingComment, setRatingComment] = useState("");
   const [ratingSaved, setRatingSaved] = useState(false);
+  const [micSupported, setMicSupported] = useState(false);
+  const [micListening, setMicListening] = useState(false);
+  const [micError, setMicError] = useState("");
   const fileInputRef = useRef(null);
+  const recognitionRef = useRef(null);
+  const recognitionPrefixRef = useRef("");
 
   async function loadTickets() {
     await fetch("/api/gemma/session", { cache: "no-store" });
@@ -52,8 +57,104 @@ export default function CustomerArea() {
   }, []);
 
   useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const Recognition =
+      window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    if (!Recognition) {
+      setMicSupported(false);
+      return;
+    }
+
+    setMicSupported(true);
+
+    const recognition = new Recognition();
+    recognition.lang = "it-IT";
+    recognition.continuous = true;
+    recognition.interimResults = true;
+
+    recognition.onresult = (event) => {
+      let transcript = "";
+
+      for (let index = 0; index < event.results.length; index += 1) {
+        transcript += event.results[index][0]?.transcript || "";
+      }
+
+      const prefix = recognitionPrefixRef.current;
+      const separator =
+        prefix && transcript && !/\s$/.test(prefix) ? " " : "";
+
+      setReply((prefix + separator + transcript).trimStart());
+      setMicError("");
+    };
+
+    recognition.onerror = (event) => {
+      setMicListening(false);
+
+      if (
+        event?.error === "not-allowed" ||
+        event?.error === "service-not-allowed"
+      ) {
+        setMicError(
+          "Consenti l’uso del microfono per dettare il messaggio.",
+        );
+      } else if (
+        event?.error !== "aborted" &&
+        event?.error !== "no-speech"
+      ) {
+        setMicError("Non riesco ad ascoltare in questo momento.");
+      }
+    };
+
+    recognition.onend = () => {
+      setMicListening(false);
+    };
+
+    recognitionRef.current = recognition;
+
+    return () => {
+      try {
+        recognition.abort();
+      } catch {}
+      recognitionRef.current = null;
+    };
+  }, []);
+
+  useEffect(() => {
+    try {
+      recognitionRef.current?.abort();
+    } catch {}
+    setMicListening(false);
+    setMicError("");
     void loadDetail(selectedId);
   }, [selectedId]);
+
+  function toggleMicrophone() {
+    if (!micSupported || busy || uploadBusy) return;
+
+    const recognition = recognitionRef.current;
+    if (!recognition) return;
+
+    if (micListening) {
+      try {
+        recognition.stop();
+      } catch {}
+      setMicListening(false);
+      return;
+    }
+
+    recognitionPrefixRef.current = reply.trim();
+    setMicError("");
+
+    try {
+      recognition.start();
+      setMicListening(true);
+    } catch {
+      setMicListening(false);
+      setMicError("Il microfono è già in uso. Riprova.");
+    }
+  }
 
   function chooseAttachments(event) {
     const selected = Array.from(event.target.files || []);
@@ -132,9 +233,17 @@ export default function CustomerArea() {
       return;
     }
 
+    if (micListening) {
+      try {
+        recognitionRef.current?.stop();
+      } catch {}
+      setMicListening(false);
+    }
+
     setBusy(true);
     setUploadBusy(pendingFiles.length > 0);
     setUploadError("");
+    setMicError("");
 
     try {
       if (text) {
@@ -406,11 +515,53 @@ export default function CustomerArea() {
                         onChange={chooseAttachments}
                       />
 
+                      {micSupported ? (
+                        <button
+                          type="button"
+                          className={
+                            micListening
+                              ? "gemmaMicButton ticketMicButton listening"
+                              : "gemmaMicButton ticketMicButton"
+                          }
+                          onClick={toggleMicrophone}
+                          disabled={busy || uploadBusy}
+                          aria-label={
+                            micListening
+                              ? "Ferma dettatura"
+                              : "Detta il messaggio"
+                          }
+                          title={
+                            micListening
+                              ? "Ferma dettatura"
+                              : "Detta il messaggio"
+                          }
+                        >
+                          <svg
+                            aria-hidden="true"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <rect x="9" y="2" width="6" height="12" rx="3" />
+                            <path d="M5 10a7 7 0 0 0 14 0" />
+                            <path d="M12 17v5" />
+                            <path d="M8 22h8" />
+                          </svg>
+                        </button>
+                      ) : null}
+
                       <input
                         className="ticketComposerText"
                         value={reply}
                         onChange={(event) => setReply(event.target.value)}
-                        placeholder="Scrivi un messaggio…"
+                        placeholder={
+                          micListening
+                            ? "Ti ascolto…"
+                            : "Scrivi o detta un messaggio…"
+                        }
                       />
 
                       <button
@@ -431,6 +582,10 @@ export default function CustomerArea() {
 
                     {uploadError ? (
                       <p className="attachmentError">{uploadError}</p>
+                    ) : null}
+
+                    {micError ? (
+                      <p className="attachmentError">{micError}</p>
                     ) : null}
                   </form>
                 </section>
