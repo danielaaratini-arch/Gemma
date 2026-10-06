@@ -1,14 +1,20 @@
 import { addTicketNote } from "../../../../../../lib/gemma-store";
+import { requireRole } from "../../../../../../lib/gemma-auth";
 
 export const runtime = "nodejs";
 
 export async function POST(request, context) {
   try {
+    const staff = requireRole(request, ["ADMIN", "OPERATOR"]);
+    if (!staff) {
+      return Response.json({ error: "Non autorizzato." }, { status: 401 });
+    }
+
     const { id } = await context.params;
     const body = await request.json();
     const note = await addTicketNote({
       ticketId: id,
-      authorName: body?.authorName || "Operatore Demo",
+      authorName: staff.name || staff.email || body?.authorName || "Operatore",
       content: body?.content,
     });
 
