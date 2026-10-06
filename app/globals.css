@@ -420,3 +420,47 @@ button,input{font:inherit}button{cursor:pointer}
  .knowledgeSyncHead{flex-direction:column}.knowledgeSyncActions{width:100%;justify-content:flex-start}.knowledgeSourceProgress{grid-template-columns:1fr}
  .knowledgeProposal{grid-template-columns:18px 68px minmax(0,1fr)}.noMatchToolbar{align-items:stretch;flex-direction:column}
 }
+
+
+/* Voice input for Gemma */
+.gemmaMicButton{
+  width:40px;
+  height:40px;
+  flex:0 0 40px;
+  display:grid;
+  place-items:center;
+  border:1px solid #cbd5e1!important;
+  border-radius:999px!important;
+  background:#fff!important;
+  color:#475569!important;
+  padding:0!important;
+}
+.gemmaMicButton:hover{
+  border-color:#10b981!important;
+  background:#ecfdf5!important;
+  color:#047857!important;
+}
+.gemmaMicButton.listening{
+  border-color:#10b981!important;
+  background:#dcfce7!important;
+  color:#047857!important;
+  box-shadow:0 0 0 4px rgba(16,185,129,.12);
+  animation:gemmaMicPulse 1.25s ease-in-out infinite;
+}
+.gemmaMicButton:disabled{cursor:not-allowed;opacity:.45}
+.gemmaMicButton svg{width:18px;height:18px}
+.gemmaSendButton{flex:0 0 auto}
+.gemmaMicError{
+  padding:5px 3px 0;
+  color:#b91c1c;
+  font-size:10px;
+  font-weight:700;
+}
+@keyframes gemmaMicPulse{
+  0%,100%{box-shadow:0 0 0 3px rgba(16,185,129,.10)}
+  50%{box-shadow:0 0 0 7px rgba(16,185,129,.05)}
+}
+@media(max-width:767px){
+  .gemmaMicButton{width:36px;height:36px;flex-basis:36px}
+  .gemmaMicButton svg{width:16px;height:16px}
+}
