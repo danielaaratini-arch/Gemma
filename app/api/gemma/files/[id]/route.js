@@ -1,6 +1,6 @@
 import {
   customerCookie,
-  customerKeyFromRequest,
+  customerContextFromRequest,
   getTicketAttachment,
 } from "../../../../../lib/gemma-store";
 import { requireRole } from "../../../../../lib/gemma-auth";
@@ -24,7 +24,13 @@ export async function GET(request, context) {
       return Response.json({ error: "Non autorizzato." }, { status: 401 });
     }
 
-    const session = customerKeyFromRequest(request);
+    const session = await customerContextFromRequest(request);
+    if (session.invalid) {
+      return Response.json(
+        { error: "Sessione cliente non valida. Accedi di nuovo." },
+        { status: 401 },
+      );
+    }
     const file = await getTicketAttachment(id, staffView ? null : session.key);
 
     if (!file) {
