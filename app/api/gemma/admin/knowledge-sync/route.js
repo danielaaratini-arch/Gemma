@@ -1,4 +1,4 @@
-import { requireRole } from "../../../../../../lib/gemma-auth";
+import { requireRole } from "../../../../../lib/gemma-auth";
 import {
   getKnowledgeSyncJob,
   listRecentKnowledgeJobs,
@@ -7,7 +7,7 @@ import {
   stepKnowledgeApply,
   stepKnowledgePreview,
   stepKnowledgeRollback,
-} from "../../../../../../lib/gemma-knowledge-sync";
+} from "../../../../../lib/gemma-knowledge-sync";
 
 export const runtime = "nodejs";
 
