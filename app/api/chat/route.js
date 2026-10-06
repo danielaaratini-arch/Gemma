@@ -1,6 +1,10 @@
 import OpenAI from "openai";
 import { retrieveKnowledge, supportText } from "../../../lib/knowledge";
 import {
+  operationalContextText,
+  retrieveGemmaOperationalContext,
+} from "../../../lib/gemma-context";
+import {
   createConversation,
   consumeAiRateLimit,
   customerCookie,
@@ -37,6 +41,8 @@ REGOLE DI CONVERSAZIONE
 12. Parla in modo naturale, breve e concreto. Per troubleshooting: breve contesto + singolo passo successivo. Evita liste numerate salvo richiesta esplicita.
 13. Suggerisci una segnalazione soltanto quando il percorso disponibile è esaurito, il problema resta irrisolto oppure manca una risposta certificata dopo le necessarie domande di chiarimento.
 14. Prima di suggerire il ticket, assicurati che nello stato siano presenti i dati e gli esiti già raccolti utili al backoffice.
+15. Gli alert di servizio attivi sono contesto operativo, non regole rigide: applicali solo quando sono semanticamente coerenti con problema, servizio e località del cliente.
+16. La memoria cliente è un aiuto contestuale: usala solo se pertinente e non citarne mai l'esistenza come sistema interno.
 
 STATO CONVERSAZIONALE
 Lo stato è privato e serve al riepilogo dinamico del ticket.
@@ -143,12 +149,16 @@ export async function POST(request) {
     );
 
     const retrievalStarted = performance.now();
-    const hits = await retrieveKnowledge({
-      current: lastUser,
-      context: retrievalContext(messages),
-    });
+    const [hits, operationalContext] = await Promise.all([
+      retrieveKnowledge({
+        current: lastUser,
+        context: retrievalContext(messages),
+      }),
+      retrieveGemmaOperationalContext(customer.key),
+    ]);
     const retrievalMs = Math.round(performance.now() - retrievalStarted);
     const support = supportText(hits);
+    const operationalSupport = operationalContextText(operationalContext);
 
     const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) {
@@ -210,6 +220,12 @@ export async function POST(request) {
                   content:
                     "CONTENUTO DI SUPPORTO CERTIFICATO (sola lettura):\n" +
                     support,
+                },
+                {
+                  role: "system",
+                  content:
+                    "CONTESTO OPERATIVO GEMMA (alert e memoria, da usare solo se pertinente):\n" +
+                    operationalSupport,
                 },
                 ...messages,
               ],
