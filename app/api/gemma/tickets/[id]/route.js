@@ -1,3 +1,4 @@
+import { after } from "next/server";
 import {
   customerCookie,
   customerKeyFromRequest,
@@ -60,7 +61,7 @@ export async function PATCH(request, context) {
     }
 
     if (before && before.status !== ticket.status) {
-      await notifyTicketStatusChanged(ticket, before.status);
+      after(() => notifyTicketStatusChanged(ticket, before.status));
     }
 
     return Response.json({ ticket });
