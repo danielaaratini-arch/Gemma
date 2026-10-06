@@ -20,6 +20,7 @@
     "react-dom": "19.2.4",
     "three": "^0.185.1",
     "nodemailer": "10.0.15",
-    "cheerio": "^1.2.0"
+    "cheerio": "^1.2.0",
+    "@vercel/blob": "^2.8.0"
   }
 }
