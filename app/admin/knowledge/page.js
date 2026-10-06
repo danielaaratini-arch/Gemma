@@ -267,6 +267,34 @@ function KnowledgeBody({ user, logout }) {
     return data.job;
   }
 
+  async function fetchKnowledgeJob(jobId) {
+    const response = await fetch(
+      "/api/gemma/admin/knowledge-sync?jobId=" +
+        encodeURIComponent(jobId),
+      { cache: "no-store" },
+    );
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data?.error || "Job Knowledge non disponibile.");
+    }
+    return data.job;
+  }
+
+  async function watchKnowledgeJob(current) {
+    let next = current;
+
+    while (
+      next?.id &&
+      ["PREVIEWING", "APPLYING", "ROLLING_BACK"].includes(next.status)
+    ) {
+      await wait(750);
+      next = await fetchKnowledgeJob(next.id);
+      setJob(next);
+    }
+
+    return next;
+  }
+
   async function startPreview() {
     if (busy) return;
     setBusy("preview");
@@ -276,16 +304,7 @@ function KnowledgeBody({ user, logout }) {
     try {
       let current = await syncRequest({ action: "start-preview" });
       setJob(current);
-
-      while (current?.status === "PREVIEWING") {
-        await wait(120);
-        current = await syncRequest({
-          action: "step-preview",
-          jobId: current.id,
-          batchSize: 8,
-        });
-        setJob(current);
-      }
+      current = await watchKnowledgeJob(current);
 
       const defaultSelection = (current?.proposals || [])
         .filter(
@@ -318,16 +337,7 @@ function KnowledgeBody({ user, logout }) {
         proposalIds: selectedIds,
       });
       setJob(current);
-
-      while (current?.status === "APPLYING") {
-        await wait(100);
-        current = await syncRequest({
-          action: "step-apply",
-          jobId: current.id,
-          batchSize: 10,
-        });
-        setJob(current);
-      }
+      current = await watchKnowledgeJob(current);
 
       await Promise.all([loadDocuments(), loadJobs()]);
     } catch (caught) {
@@ -355,17 +365,13 @@ function KnowledgeBody({ user, logout }) {
     setError("");
 
     try {
-      let current = job;
-
-      do {
-        current = await syncRequest({
-          action: "rollback-step",
-          jobId: job.id,
-          batchSize: 10,
-        });
-        setJob(current);
-        if (current?.status !== "ROLLED_BACK") await wait(100);
-      } while (current?.status !== "ROLLED_BACK");
+      let current = await syncRequest({
+        action: "rollback-step",
+        jobId: job.id,
+        batchSize: 10,
+      });
+      setJob(current);
+      current = await watchKnowledgeJob(current);
 
       await Promise.all([loadDocuments(), loadJobs()]);
     } catch (caught) {
@@ -380,22 +386,21 @@ function KnowledgeBody({ user, logout }) {
   }
 
   async function openJob(jobId) {
-    const response = await fetch(
-      "/api/gemma/admin/knowledge-sync?jobId=" +
-        encodeURIComponent(jobId),
-      { cache: "no-store" },
-    );
-    const data = await response.json();
-    if (!response.ok) {
-      setError(data?.error || "Job non disponibile.");
-      return;
+    try {
+      const current = await fetchKnowledgeJob(jobId);
+      setJob(current);
+      setSelectedIds(
+        (current?.proposals || [])
+          .filter((item) => item.selected)
+          .map((item) => item.id),
+      );
+    } catch (caught) {
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : "Job Knowledge non disponibile.",
+      );
     }
-    setJob(data.job);
-    setSelectedIds(
-      (data.job?.proposals || [])
-        .filter((item) => item.selected)
-        .map((item) => item.id),
-    );
   }
 
   async function resumeKnowledgeJob() {
@@ -413,35 +418,28 @@ function KnowledgeBody({ user, logout }) {
     try {
       let current = job;
 
-      while (current?.status === "PREVIEWING") {
+      if (current.status === "PREVIEWING") {
         current = await syncRequest({
           action: "step-preview",
           jobId: current.id,
           batchSize: 8,
         });
-        setJob(current);
-        if (current?.status === "PREVIEWING") await wait(120);
-      }
-
-      while (current?.status === "APPLYING") {
+      } else if (current.status === "APPLYING") {
         current = await syncRequest({
           action: "step-apply",
           jobId: current.id,
           batchSize: 10,
         });
-        setJob(current);
-        if (current?.status === "APPLYING") await wait(100);
-      }
-
-      while (current?.status === "ROLLING_BACK") {
+      } else if (current.status === "ROLLING_BACK") {
         current = await syncRequest({
           action: "rollback-step",
           jobId: current.id,
           batchSize: 10,
         });
-        setJob(current);
-        if (current?.status === "ROLLING_BACK") await wait(100);
       }
+
+      setJob(current);
+      current = await watchKnowledgeJob(current);
 
       if (current?.status === "PREVIEW_READY") {
         setSelectedIds(
