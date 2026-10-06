@@ -11,7 +11,7 @@ import {
   createConversation,
   consumeAiRateLimit,
   customerCookie,
-  customerKeyFromRequest,
+  customerContextFromRequest,
   getConversation,
   saveConversationTurn,
 } from "../../../lib/gemma-store";
@@ -170,7 +170,13 @@ export async function POST(request) {
       return Response.json({ error: "Richiesta vuota" }, { status: 400 });
     }
 
-    const customer = customerKeyFromRequest(request);
+    const customer = await customerContextFromRequest(request);
+    if (customer.invalid) {
+      return Response.json(
+        { error: "Sessione cliente non valida. Accedi di nuovo." },
+        { status: 401 },
+      );
+    }
 
     const rateLimit = await consumeAiRateLimit(customer.key, {
       limit: Number(process.env.GEMMA_AI_RATE_PER_MINUTE) || 30,
