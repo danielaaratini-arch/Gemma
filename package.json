@@ -21,6 +21,7 @@
     "three": "^0.185.1",
     "nodemailer": "10.0.15",
     "cheerio": "^1.2.0",
-    "@vercel/blob": "^2.8.0"
+    "@vercel/blob": "^2.8.0",
+    "web-push": "^3.6.7"
   }
 }
