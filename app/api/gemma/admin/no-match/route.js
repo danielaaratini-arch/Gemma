@@ -4,7 +4,7 @@ import { listNoMatches } from "../../../../../lib/gemma-no-match";
 export const runtime = "nodejs";
 
 export async function GET(request) {
-  if (!requireRole(request, ["ADMIN"])) {
+  if (!(await requireRole(request, ["ADMIN"]))) {
     return Response.json({ error: "Non autorizzato." }, { status: 401 });
   }
 
