@@ -351,6 +351,74 @@ function KnowledgeBody({ user, logout }) {
     );
   }
 
+  async function resumeKnowledgeJob() {
+    if (
+      !job?.id ||
+      !["PREVIEWING", "APPLYING", "ROLLING_BACK"].includes(job.status) ||
+      busy
+    ) {
+      return;
+    }
+
+    setBusy("resume");
+    setError("");
+
+    try {
+      let current = job;
+
+      while (current?.status === "PREVIEWING") {
+        current = await syncRequest({
+          action: "step-preview",
+          jobId: current.id,
+          batchSize: 8,
+        });
+        setJob(current);
+        if (current?.status === "PREVIEWING") await wait(120);
+      }
+
+      while (current?.status === "APPLYING") {
+        current = await syncRequest({
+          action: "step-apply",
+          jobId: current.id,
+          batchSize: 10,
+        });
+        setJob(current);
+        if (current?.status === "APPLYING") await wait(100);
+      }
+
+      while (current?.status === "ROLLING_BACK") {
+        current = await syncRequest({
+          action: "rollback-step",
+          jobId: current.id,
+          batchSize: 10,
+        });
+        setJob(current);
+        if (current?.status === "ROLLING_BACK") await wait(100);
+      }
+
+      if (current?.status === "PREVIEW_READY") {
+        setSelectedIds(
+          (current.proposals || [])
+            .filter(
+              (item) =>
+                item?.metadata_json?.safetyStatus === "SAFE",
+            )
+            .map((item) => item.id),
+        );
+      }
+
+      await Promise.all([loadDocuments(), loadJobs()]);
+    } catch (caught) {
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : "Ripresa operazione Knowledge non riuscita.",
+      );
+    } finally {
+      setBusy("");
+    }
+  }
+
   const counts = useMemo(
     () => ({
       total: documents.length,
