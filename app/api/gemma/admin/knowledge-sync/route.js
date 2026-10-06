@@ -1,3 +1,4 @@
+import { after } from "next/server";
 import { requireRole } from "../../../../../lib/gemma-auth";
 import {
   getKnowledgeSyncJob,
@@ -8,11 +9,29 @@ import {
   stepKnowledgePreview,
   stepKnowledgeRollback,
 } from "../../../../../lib/gemma-knowledge-sync";
+import {
+  knowledgeJobIsActive,
+  requestKnowledgeWorker,
+} from "../../../../../lib/gemma-knowledge-worker";
 
 export const runtime = "nodejs";
 
 async function admin(request) {
   return await requireRole(request, ["ADMIN"]);
+}
+
+function continueInBackground(request, job) {
+  if (!knowledgeJobIsActive(job)) return;
+  const origin = new URL(request.url).origin;
+
+  after(() =>
+    requestKnowledgeWorker(origin, job.id).catch((error) => {
+      console.error(
+        "Gemma Knowledge background continuation error",
+        error instanceof Error ? error.message : String(error),
+      );
+    }),
+  );
 }
 
 export async function GET(request) {
@@ -46,9 +65,11 @@ export async function POST(request) {
     const action = String(body?.action || "").trim();
 
     if (action === "start-preview") {
-      return Response.json({
-        job: await startKnowledgePreview(user.name || user.email || "Admin"),
-      });
+      const job = await startKnowledgePreview(
+        user.name || user.email || "Admin",
+      );
+      continueInBackground(request, job);
+      return Response.json({ job });
     }
 
     if (action === "step-preview") {
@@ -56,9 +77,9 @@ export async function POST(request) {
       if (!jobId) {
         return Response.json({ error: "Job mancante." }, { status: 400 });
       }
-      return Response.json({
-        job: await stepKnowledgePreview(jobId, body?.batchSize),
-      });
+      const job = await stepKnowledgePreview(jobId, body?.batchSize);
+      continueInBackground(request, job);
+      return Response.json({ job });
     }
 
     if (action === "start-apply") {
@@ -66,13 +87,13 @@ export async function POST(request) {
       if (!jobId) {
         return Response.json({ error: "Job mancante." }, { status: 400 });
       }
-      return Response.json({
-        job: await startKnowledgeApply(
-          jobId,
-          body?.proposalIds,
-          user.name || user.email || "Admin",
-        ),
-      });
+      const job = await startKnowledgeApply(
+        jobId,
+        body?.proposalIds,
+        user.name || user.email || "Admin",
+      );
+      continueInBackground(request, job);
+      return Response.json({ job });
     }
 
     if (action === "step-apply") {
@@ -80,9 +101,9 @@ export async function POST(request) {
       if (!jobId) {
         return Response.json({ error: "Job mancante." }, { status: 400 });
       }
-      return Response.json({
-        job: await stepKnowledgeApply(jobId, body?.batchSize),
-      });
+      const job = await stepKnowledgeApply(jobId, body?.batchSize);
+      continueInBackground(request, job);
+      return Response.json({ job });
     }
 
     if (action === "rollback-step") {
@@ -90,9 +111,9 @@ export async function POST(request) {
       if (!jobId) {
         return Response.json({ error: "Job mancante." }, { status: 400 });
       }
-      return Response.json({
-        job: await stepKnowledgeRollback(jobId, body?.batchSize),
-      });
+      const job = await stepKnowledgeRollback(jobId, body?.batchSize);
+      continueInBackground(request, job);
+      return Response.json({ job });
     }
 
     return Response.json(
