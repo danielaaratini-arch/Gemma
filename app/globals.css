@@ -225,3 +225,35 @@ button,input{font:inherit}button{cursor:pointer}
  .gemmaQuickLinks>div{padding:14px}
  .gemmaFooterInner{padding:18px 14px;flex-direction:column}
 }
+
+
+/* Area Cliente — visual language aligned to Lia/Alda */
+.gemmaCustomerPage{min-height:100dvh;background:#f8fafc;color:#0f172a}
+.gemmaCustomerHeader{padding:12px 14px 0}
+.gemmaCustomerHeaderCard{max-width:1480px;margin:0 auto;border:1px solid #e2e8f0;border-radius:18px;background:#fff;padding:14px 18px;box-shadow:0 2px 8px rgba(15,23,42,.04);display:flex;align-items:center;justify-content:space-between;gap:18px}
+.gemmaCustomerHeaderMain{display:flex;align-items:center;gap:18px;min-width:0}
+.gemmaCustomerBrand{display:flex;flex-direction:column;flex:0 0 auto;padding-right:18px;border-right:1px solid #e2e8f0;text-decoration:none}
+.gemmaCustomerBrand span{font-size:20px;font-weight:900;letter-spacing:-.03em;color:#020617}
+.gemmaCustomerBrand small{margin-top:5px;font-size:10px;font-weight:800;color:#059669}
+.gemmaCustomerTitle{min-width:0}
+.gemmaCustomerTitle>div{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.gemmaCustomerTitle h1{margin:0;font-size:26px;letter-spacing:-.035em}
+.gemmaCustomerTitle span{font-size:12px;font-weight:700;color:#64748b}
+.gemmaCustomerTitle p{margin:3px 0 0;font-size:12px;color:#64748b}
+.gemmaCustomerHeaderActions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.gemmaCustomerHeaderActions a{border:1px solid #e2e8f0;border-radius:11px;background:#fff;padding:8px 11px;text-decoration:none;color:#475569;font-size:12px;font-weight:750}
+.gemmaCustomerHeaderActions a:first-child{border-color:#10b981;color:#047857}
+.gemmaCustomerHeaderActions a:hover{background:#f8fafc}
+.gemmaCustomerContent{max-width:1480px;margin:0 auto;padding:16px 14px 28px}
+.portalNavLinkActive{background:#059669;color:#fff;border-color:#059669}
+
+@media(max-width:767px){
+ .gemmaCustomerHeader{padding:8px 8px 0}
+ .gemmaCustomerHeaderCard{padding:11px 12px;align-items:flex-start}
+ .gemmaCustomerHeaderMain{gap:11px}
+ .gemmaCustomerBrand{padding-right:11px}
+ .gemmaCustomerBrand span{font-size:17px}.gemmaCustomerBrand small{font-size:8px}
+ .gemmaCustomerTitle h1{font-size:20px}.gemmaCustomerTitle span{font-size:10px}.gemmaCustomerTitle p{font-size:10px}
+ .gemmaCustomerHeaderActions{display:none}
+ .gemmaCustomerContent{padding:10px 8px 20px}
+}
