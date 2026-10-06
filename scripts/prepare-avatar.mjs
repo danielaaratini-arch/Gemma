@@ -27,6 +27,21 @@ const document = JSON.parse(
   original.toString("utf8", jsonStart, jsonEnd).trimEnd(),
 );
 
+console.log(
+  "Gemma avatar materials:",
+  JSON.stringify(
+    (document.materials || []).map((material, index) => ({
+      index,
+      name: material.name || "",
+      baseColorFactor:
+        material.pbrMetallicRoughness?.baseColorFactor || null,
+      hasBaseColorTexture: Boolean(
+        material.pbrMetallicRoughness?.baseColorTexture,
+      ),
+    })),
+  ),
+);
+
 const hair = (document.materials || []).find((material) =>
   String(material.name || "").toLowerCase().includes("long01"),
 );
