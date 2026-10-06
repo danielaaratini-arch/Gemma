@@ -2,22 +2,36 @@ import fs from "node:fs";
 
 const read = (path) => fs.readFileSync(path, "utf8");
 const knowledge = read("lib/knowledge.js");
+const store = read("lib/gemma-store.js");
 const chat = read("app/api/chat/route.js");
-const tree = fs
-  .readdirSync("app/api", { withFileTypes: true })
-  .filter((entry) => entry.isDirectory())
-  .map((entry) => entry.name)
-  .sort();
-
+const page = read("app/page.js");
 const failures = [];
 
 if (!knowledge.includes('sql.begin("read only"')) {
-  failures.push("Il retrieval DB non forza una transazione read-only.");
+  failures.push("Il retrieval Knowledge non forza una transazione read-only.");
 }
 
 for (const verb of ["INSERT INTO", "UPDATE ", "DELETE FROM", "CREATE TABLE", "ALTER TABLE", "DROP TABLE"]) {
   if (knowledge.toUpperCase().includes(verb)) {
-    failures.push("Operazione DB di scrittura rilevata: " + verb.trim());
+    failures.push("Scrittura rilevata nel modulo Knowledge: " + verb.trim());
+  }
+}
+
+if (!store.includes("CREATE SCHEMA IF NOT EXISTS gemma")) {
+  failures.push("Manca lo schema operativo isolato gemma.");
+}
+
+for (const forbidden of [
+  'INSERT INTO "Knowledge',
+  'UPDATE "Knowledge',
+  'DELETE FROM "Knowledge',
+  'INSERT INTO "Conversation',
+  'UPDATE "Conversation',
+  'INSERT INTO "Ticket',
+  'UPDATE "Ticket',
+]) {
+  if (store.includes(forbidden)) {
+    failures.push("Scrittura su tabella Lia/Alda rilevata: " + forbidden);
   }
 }
 
@@ -29,8 +43,24 @@ if (!chat.includes("rispondi prima al chiarimento")) {
   failures.push("Manca il guardrail chiarimento-prima-ripresa.");
 }
 
-if (tree.some((name) => ["ticket", "admin", "knowledge-write"].includes(name))) {
-  failures.push("Endpoint di scrittura inatteso.");
+if (!chat.includes("<<GEMMA_STATE>>")) {
+  failures.push("Manca lo stato strutturato del riepilogo dinamico.");
+}
+
+if (!chat.includes("saveConversationTurn")) {
+  failures.push("Lo stato conversazionale non viene persistito.");
+}
+
+if (!fs.existsSync("app/api/tts/route.js")) {
+  failures.push("Endpoint TTS Gemma mancante.");
+}
+
+if (!page.includes('useGemmaSpeech')) {
+  failures.push("Client Gemma non usa il TTS dedicato.");
+}
+
+for (const route of ["app/cliente/page.js", "app/backoffice/page.js", "app/admin/page.js"]) {
+  if (!fs.existsSync(route)) failures.push("Area mancante: " + route);
 }
 
 if (failures.length) {
