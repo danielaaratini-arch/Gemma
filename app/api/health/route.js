@@ -60,7 +60,7 @@ export async function GET() {
     aiConfigured: Boolean(process.env.OPENAI_API_KEY),
     database,
     isolation: {
-      sharedKnowledge: "read-only",
+      sharedKnowledge: "read-only in chat/retrieval; admin-only Preview/Apply/Rollback can update the canonical Knowledge",
       operationalWrites: "schema gemma",
       liaAldaOperationalWrites: 0,
     },
