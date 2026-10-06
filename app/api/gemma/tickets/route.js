@@ -5,6 +5,7 @@ import {
   listTickets,
 } from "../../../../lib/gemma-store";
 import { notifyTicketCreated } from "../../../../lib/gemma-notifications";
+import { requireRole } from "../../../../lib/gemma-auth";
 
 export const runtime = "nodejs";
 
@@ -45,10 +46,27 @@ export async function GET(request) {
     );
     const cursor = decodeCursor(url.searchParams.get("cursor"));
 
+    const staff =
+      scope === "all"
+        ? requireRole(request, ["ADMIN", "OPERATOR"])
+        : null;
+
+    if (scope === "all" && !staff) {
+      return Response.json({ error: "Non autorizzato." }, { status: 401 });
+    }
+
     const tickets = await listTickets({
       customerKey: scope === "all" ? null : session.key,
       limit: limit + 1,
       cursor,
+      search: scope === "all" ? url.searchParams.get("search") || "" : "",
+      status: scope === "all" ? url.searchParams.get("status") || "ALL" : "ALL",
+      department:
+        scope === "all" ? url.searchParams.get("department") || "ALL" : "ALL",
+      assignee:
+        scope === "all" && url.searchParams.get("mine") === "1"
+          ? staff?.name || staff?.email || ""
+          : "",
     });
 
     const hasMore = tickets.length > limit;
