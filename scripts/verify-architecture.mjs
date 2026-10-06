@@ -103,6 +103,32 @@ if (!read("lib/gemma-notifications.js").includes("SMTP_USER")) {
   failures.push("Configurazione notifiche SMTP mancante.");
 }
 
+const internalRequired = [
+  "components/GemmaInternalAuth.js",
+  "components/GemmaInternalNav.js",
+  "app/admin/users/page.js",
+  "app/admin/faults/page.js",
+  "app/admin/memory/page.js",
+  "app/admin/ai-router/page.js",
+  "app/admin/gradimento/page.js",
+  "app/admin/knowledge/page.js",
+  "app/backoffice/performance/page.js",
+  "app/conversations/page.js",
+  "app/reports/page.js",
+  "app/api/gemma/auth/login/route.js",
+  "app/api/gemma/auth/session/route.js",
+  "app/api/gemma/tickets/[id]/view/route.js",
+];
+
+for (const path of internalRequired) {
+  if (!fs.existsSync(path)) failures.push("Funzione interna Gemma mancante: " + path);
+}
+
+const chatRoute = read("app/api/chat/route.js");
+if (!chatRoute.includes("retrieveGemmaOperationalContext")) {
+  failures.push("Alert e Customer Memory non sono integrati nel contesto Gemma.");
+}
+
 if (failures.length) {
   console.error(failures.join("\n"));
   process.exit(1);
