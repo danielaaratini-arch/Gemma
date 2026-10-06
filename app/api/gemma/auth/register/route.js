@@ -1,4 +1,8 @@
-import { authCookieForUser, createUser } from "../../../../../lib/gemma-auth";
+import {
+  adoptAnonymousCustomer,
+  authCookieForUser,
+  createUser,
+} from "../../../../../lib/gemma-auth";
 
 export const runtime = "nodejs";
 
@@ -11,12 +15,20 @@ export async function POST(request) {
       password: body?.password,
       role: "CUSTOMER",
     });
+
+    await adoptAnonymousCustomer(request, user);
+
     const response = Response.json({ user }, { status: 201 });
     response.headers.set("set-cookie", authCookieForUser(user));
     return response;
   } catch (error) {
     return Response.json(
-      { error: error instanceof Error ? error.message : "Registrazione non riuscita." },
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : "Registrazione non riuscita.",
+      },
       { status: 400 },
     );
   }
