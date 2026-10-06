@@ -67,7 +67,7 @@ export async function GET() {
     },
     attachmentStorage: {
       mode:
-        process.env.BLOB_READ_WRITE_TOKEN
+        process.env.BLOB_READ_WRITE_TOKEN || process.env.BLOB_STORE_ID
           ? "blob-configured"
           : "database-preview-fallback",
       productionDbFallbackAllowed:
