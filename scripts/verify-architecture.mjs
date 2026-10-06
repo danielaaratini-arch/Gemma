@@ -166,6 +166,14 @@ if (fs.existsSync("lib/gemma-no-match.js")) {
   }
 }
 
+if (!read("app/page.js").includes("SpeechRecognition")) {
+  failures.push("Microfono / dettatura Gemma mancante.");
+}
+
+if (!read("app/page.js").includes("Parla con Gemma")) {
+  failures.push("Controllo microfono Gemma mancante nel composer.");
+}
+
 if (failures.length) {
   console.error(failures.join("\n"));
   process.exit(1);
