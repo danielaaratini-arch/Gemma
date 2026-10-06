@@ -174,6 +174,10 @@ if (!read("app/page.js").includes("Parla con Gemma")) {
   failures.push("Controllo microfono Gemma mancante nel composer.");
 }
 
+if (!read("app/cliente/page.js").includes("Detta il messaggio")) {
+  failures.push("Microfono area cliente Gemma mancante.");
+}
+
 if (failures.length) {
   console.error(failures.join("\n"));
   process.exit(1);
