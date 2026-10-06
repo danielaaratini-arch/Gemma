@@ -13,12 +13,14 @@ const adminItems = [
   ["/admin/gradimento", "Gradimento"],
   ["/admin/knowledge", "Knowledge"],
   ["/conversations", "Conversazioni"],
+  ["/reports", "Report"],
 ];
 
 const operatorItems = [
   ["/backoffice", "Ticket"],
   ["/backoffice/performance", "Performance"],
   ["/conversations", "Conversazioni"],
+  ["/reports", "Report"],
 ];
 
 export default function GemmaInternalNav({ role, user, onLogout }) {
