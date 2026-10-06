@@ -210,6 +210,10 @@ if (!knowledge.includes("inferCurrentTurnService") || !knowledge.includes("topic
   failures.push("Il retrieval non protegge il cambio argomento dal vecchio scope Fisso/Mobile.");
 }
 
+if (!chat.includes("CHIARIMENTO:") || !chat.includes("INFORMAZIONE COLLEGATA:") || !chat.includes("CAMBIO ARGOMENTO:")) {
+  failures.push("Gemma non distingue chiarimenti, informazioni collegate e cambio argomento.");
+}
+
 if (failures.length) {
   console.error(failures.join("\n"));
   process.exit(1);
