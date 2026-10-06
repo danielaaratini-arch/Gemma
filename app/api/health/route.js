@@ -67,8 +67,8 @@ export async function GET() {
     },
     attachmentStorage: {
       mode:
-        process.env.BLOB_READ_WRITE_TOKEN || process.env.VERCEL_OIDC_TOKEN
-          ? "blob-capable"
+        process.env.BLOB_READ_WRITE_TOKEN
+          ? "blob-configured"
           : "database-preview-fallback",
       productionDbFallbackAllowed:
         String(process.env.GEMMA_ALLOW_DB_ATTACHMENTS || "").toLowerCase() ===
