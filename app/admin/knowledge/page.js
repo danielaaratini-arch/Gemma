@@ -21,6 +21,7 @@ function KnowledgeBody({ user, logout }) {
   const [noMatchHint, setNoMatchHint] = useState("");
   const [manualOpen, setManualOpen] = useState(false);
   const [manualEditId, setManualEditId] = useState(null);
+  const [uploadName, setUploadName] = useState("");
   const [manualForm, setManualForm] = useState({
     title: "",
     description: "",
@@ -84,6 +85,7 @@ function KnowledgeBody({ user, logout }) {
 
   function resetManualForm() {
     setManualEditId(null);
+    setUploadName("");
     setManualForm({
       title: noMatchHint ? noMatchHint.slice(0, 180) : "",
       description: "",
@@ -96,6 +98,51 @@ function KnowledgeBody({ user, logout }) {
       deviceScope: "",
       status: "DRAFT",
     });
+  }
+
+  async function loadKnowledgeFile(event) {
+    const file = event.target.files?.[0] || null;
+    event.target.value = "";
+    if (!file || busy) return;
+
+    setBusy("manual-upload");
+    setError("");
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const response = await fetch("/api/gemma/admin/knowledge/upload", {
+        method: "POST",
+        body: formData,
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data?.error || "Documento Knowledge non leggibile.");
+      }
+
+      const parsed = data.document || {};
+      setManualEditId(null);
+      setUploadName(parsed.fileName || file.name);
+      setManualForm((current) => ({
+        ...current,
+        title: parsed.title || current.title,
+        description: current.description,
+        content: parsed.content || "",
+        status: "DRAFT",
+      }));
+      setManualOpen(true);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } catch (caught) {
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : "Documento Knowledge non leggibile.",
+      );
+    } finally {
+      setBusy("");
+    }
   }
 
   async function saveManualDocument(event) {
@@ -506,20 +553,38 @@ function KnowledgeBody({ user, logout }) {
                 partono come DRAFT per impostazione predefinita.
               </p>
             </div>
-            <button
-              type="button"
-              className="secondaryAction"
-              onClick={() => {
-                if (manualOpen) resetManualForm();
-                setManualOpen((current) => !current);
-              }}
-            >
-              {manualOpen ? "Chiudi" : "Nuovo documento"}
-            </button>
+            <div className="knowledgeManualActions">
+              <label className="secondaryAction" style={{ cursor: "pointer" }}>
+                {busy === "manual-upload" ? "Lettura file…" : "Carica documento"}
+                <input
+                  type="file"
+                  accept=".pdf,.docx,.txt,.html,.htm"
+                  onChange={loadKnowledgeFile}
+                  disabled={Boolean(busy)}
+                  style={{ display: "none" }}
+                />
+              </label>
+              <button
+                type="button"
+                className="secondaryAction"
+                onClick={() => {
+                  if (manualOpen) resetManualForm();
+                  setManualOpen((current) => !current);
+                }}
+              >
+                {manualOpen ? "Chiudi" : "Nuovo documento"}
+              </button>
+            </div>
           </div>
 
           {manualOpen ? (
             <form className="knowledgeManualForm" onSubmit={saveManualDocument}>
+              {uploadName ? (
+                <div className="knowledgeNoMatchHint span2">
+                  <strong>Documento caricato</strong>
+                  <span>{uploadName} · il contenuto resta DRAFT finché non lo salvi.</span>
+                </div>
+              ) : null}
               <label className="span2">
                 Titolo
                 <input
