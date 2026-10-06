@@ -17,7 +17,7 @@ export async function GET(request, context) {
     const url = new URL(request.url);
     const staffView = url.searchParams.get("scope") === "staff";
     const staff = staffView
-      ? requireRole(request, ["ADMIN", "OPERATOR"])
+      ? await requireRole(request, ["ADMIN", "OPERATOR"])
       : null;
 
     if (staffView && !staff) {
