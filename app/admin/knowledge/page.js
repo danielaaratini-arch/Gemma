@@ -811,6 +811,25 @@ function KnowledgeBody({ user, logout }) {
                 <span>{item.assistance_area || "—"}</span>
                 <span className="statusPill">{item.status}</span>
                 <span>{item.chunks}</span>
+                <span className="knowledgeRowActions">
+                  <button
+                    type="button"
+                    onClick={() => void editKnowledgeDocument(item.id)}
+                  >
+                    Modifica
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      void setKnowledgeStatus(
+                        item.id,
+                        item.status === "ACTIVE" ? "ARCHIVED" : "ACTIVE",
+                      )
+                    }
+                  >
+                    {item.status === "ACTIVE" ? "Archivia" : "Attiva"}
+                  </button>
+                </span>
               </div>
             ))}
           </div>
