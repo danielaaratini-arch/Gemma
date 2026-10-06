@@ -723,6 +723,18 @@ function KnowledgeBody({ user, logout }) {
                   <span>Da archiviare {proposalCounts.archive}</span>
                   <span>Da rivedere {proposalCounts.review}</span>
                   <span>Errori fetch {job.errors || 0}</span>
+                  {["PREVIEWING", "APPLYING", "ROLLING_BACK"].includes(
+                    job.status,
+                  ) ? (
+                    <button
+                      type="button"
+                      className="secondaryAction"
+                      onClick={() => void resumeKnowledgeJob()}
+                      disabled={Boolean(busy)}
+                    >
+                      Riprendi
+                    </button>
+                  ) : null}
                 </div>
               </div>
 
