@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import GemmaCustomerHeader from "../../components/GemmaCustomerHeader";
+import GemmaCustomerAuth from "../../components/GemmaCustomerAuth";
 import TicketSummary from "../../components/TicketSummary";
 
 function dateTime(value) {
@@ -12,7 +13,7 @@ function dateTime(value) {
   }).format(new Date(value));
 }
 
-export default function CustomerArea() {
+function CustomerAreaBody({ user, logout }) {
   const [tickets, setTickets] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
   const [detail, setDetail] = useState(null);
@@ -326,7 +327,7 @@ export default function CustomerArea() {
 
   return (
     <main className="gemmaCustomerPage">
-      <GemmaCustomerHeader />
+      <GemmaCustomerHeader user={user} onLogout={logout} />
 
       <section className="gemmaCustomerContent">
         <div className="portalGrid">
@@ -595,4 +596,15 @@ export default function CustomerArea() {
         </div>
       </section>
     </main>
-  );}
+  );
+}
+
+export default function CustomerArea() {
+  return (
+    <GemmaCustomerAuth>
+      {({ user, logout }) => (
+        <CustomerAreaBody user={user} logout={logout} />
+      )}
+    </GemmaCustomerAuth>
+  );
+}
