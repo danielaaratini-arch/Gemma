@@ -1,4 +1,8 @@
-import { authCookieForUser, authenticateUser } from "../../../../../lib/gemma-auth";
+import {
+  adoptAnonymousCustomer,
+  authCookieForUser,
+  authenticateUser,
+} from "../../../../../lib/gemma-auth";
 
 export const runtime = "nodejs";
 
@@ -15,7 +19,14 @@ export async function POST(request) {
   });
 
   if (!user) {
-    return Response.json({ error: "Credenziali non valide." }, { status: 401 });
+    return Response.json(
+      { error: "Credenziali non valide." },
+      { status: 401 },
+    );
+  }
+
+  if (user.role === "CUSTOMER") {
+    await adoptAnonymousCustomer(request, user);
   }
 
   const response = Response.json({ user });
