@@ -556,8 +556,19 @@ function BackofficeBody({ user, logout }) {
                   <div className="panelTitle">Cliente</div>
                   <div className="metaRows">
                     <div><span>Nome</span><strong>{detail.customer_name || "—"}</strong></div>
-                    <div><span>Email notifiche</span><strong>{detail.notification_email || "—"}</strong></div>
-                    <div><span>Customer key</span><strong>{detail.customer_key || "—"}</strong></div>
+                    <div><span>Codice cliente</span><strong>{detail.customer_code || "—"}</strong></div>
+                    <div><span>Numero linea / SIM</span><strong>{detail.service_number || "—"}</strong></div>
+                    <div>
+                      <span>Email notifiche</span>
+                      <strong>
+                        {detail.notification_email || "—"}
+                        {detail.notification_email
+                          ? detail.notification_email_verified
+                            ? " · verificata"
+                            : " · non verificata"
+                          : ""}
+                      </strong>
+                    </div>
                   </div>
                 </section>
 
