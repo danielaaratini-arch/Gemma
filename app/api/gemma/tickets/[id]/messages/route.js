@@ -2,7 +2,7 @@ import { after } from "next/server";
 import {
   addTicketMessage,
   customerCookie,
-  customerKeyFromRequest,
+  customerContextFromRequest,
   getTicket,
   updateTicket,
 } from "../../../../../../lib/gemma-store";
@@ -21,7 +21,13 @@ const REPLY_STATUSES = new Set([
 export async function POST(request, context) {
   try {
     const { id } = await context.params;
-    const session = customerKeyFromRequest(request);
+    const session = await customerContextFromRequest(request);
+    if (session.invalid) {
+      return Response.json(
+        { error: "Sessione cliente non valida. Accedi di nuovo." },
+        { status: 401 },
+      );
+    }
     const body = await request.json();
     const requestedRole = body?.role === "OPERATOR" ? "OPERATOR" : "CUSTOMER";
 
