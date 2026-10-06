@@ -6,6 +6,7 @@ import {
   updateTicket,
 } from "../../../../../lib/gemma-store";
 import { notifyTicketStatusChanged } from "../../../../../lib/gemma-notifications";
+import { notifyCustomerTicketStatus } from "../../../../../lib/gemma-push";
 import { requireRole } from "../../../../../lib/gemma-auth";
 
 export const runtime = "nodejs";
@@ -61,7 +62,12 @@ export async function PATCH(request, context) {
     }
 
     if (before && before.status !== ticket.status) {
-      after(() => notifyTicketStatusChanged(ticket, before.status));
+      after(() =>
+        Promise.allSettled([
+          notifyTicketStatusChanged(ticket, before.status),
+          notifyCustomerTicketStatus(ticket, before.status),
+        ]),
+      );
     }
 
     return Response.json({ ticket });
