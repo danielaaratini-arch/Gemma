@@ -82,9 +82,14 @@ export default function Home() {
   const [busy, setBusy] = useState(false);
   const [ticketBusy, setTicketBusy] = useState(false);
   const [metrics, setMetrics] = useState(null);
+  const [micSupported, setMicSupported] = useState(false);
+  const [micListening, setMicListening] = useState(false);
+  const [micError, setMicError] = useState("");
 
   const listRef = useRef(null);
   const abortRef = useRef(null);
+  const recognitionRef = useRef(null);
+  const recognitionPrefixRef = useRef("");
   const {
     isSpeaking: speaking,
     begin: beginSpeech,
@@ -97,6 +102,63 @@ export default function Home() {
     setConversationId(localStorage.getItem(CONVERSATION_KEY));
     setHydrated(true);
     void fetch("/api/gemma/session", { cache: "no-store" });
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const Recognition =
+      window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    if (!Recognition) {
+      setMicSupported(false);
+      return;
+    }
+
+    setMicSupported(true);
+
+    const recognition = new Recognition();
+    recognition.lang = "it-IT";
+    recognition.continuous = true;
+    recognition.interimResults = true;
+
+    recognition.onresult = (event) => {
+      let transcript = "";
+
+      for (let index = 0; index < event.results.length; index += 1) {
+        transcript += event.results[index][0]?.transcript || "";
+      }
+
+      const prefix = recognitionPrefixRef.current;
+      const separator =
+        prefix && transcript && !/\s$/.test(prefix) ? " " : "";
+
+      setInput((prefix + separator + transcript).trimStart());
+      setMicError("");
+    };
+
+    recognition.onerror = (event) => {
+      setMicListening(false);
+
+      if (event?.error === "not-allowed" || event?.error === "service-not-allowed") {
+        setMicError("Consenti l’uso del microfono per parlare con Gemma.");
+      } else if (event?.error !== "aborted" && event?.error !== "no-speech") {
+        setMicError("Non riesco ad ascoltare in questo momento.");
+      }
+    };
+
+    recognition.onend = () => {
+      setMicListening(false);
+    };
+
+    recognitionRef.current = recognition;
+
+    return () => {
+      try {
+        recognition.abort();
+      } catch {}
+      recognitionRef.current = null;
+    };
   }, []);
 
   useEffect(() => {
@@ -115,6 +177,11 @@ export default function Home() {
 
   function newConversation() {
     abortRef.current?.abort();
+    try {
+      recognitionRef.current?.abort();
+    } catch {}
+    setMicListening(false);
+    setMicError("");
     stopSpeech();
     setBusy(false);
     setMetrics(null);
@@ -129,6 +196,32 @@ export default function Home() {
       localStorage.removeItem(STORAGE_KEY);
       localStorage.removeItem(CONVERSATION_KEY);
     } catch {}
+  }
+
+  function toggleMicrophone() {
+    if (!micSupported || busy) return;
+
+    const recognition = recognitionRef.current;
+    if (!recognition) return;
+
+    if (micListening) {
+      try {
+        recognition.stop();
+      } catch {}
+      setMicListening(false);
+      return;
+    }
+
+    recognitionPrefixRef.current = input.trim();
+    setMicError("");
+
+    try {
+      recognition.start();
+      setMicListening(true);
+    } catch {
+      setMicListening(false);
+      setMicError("Il microfono è già in uso. Riprova.");
+    }
   }
 
   async function openTicket() {
@@ -168,6 +261,13 @@ export default function Home() {
     event.preventDefault();
     const question = input.trim();
     if (!question || busy) return;
+
+    if (micListening) {
+      try {
+        recognitionRef.current?.stop();
+      } catch {}
+      setMicListening(false);
+    }
 
     beginSpeech();
     setTicketOffer(null);
@@ -425,17 +525,67 @@ export default function Home() {
 
               <div className="gemmaComposerWrap">
                 <form className="gemmaComposer" onSubmit={submit}>
+                  {micSupported && (
+                    <button
+                      type="button"
+                      className={
+                        micListening
+                          ? "gemmaMicButton listening"
+                          : "gemmaMicButton"
+                      }
+                      onClick={toggleMicrophone}
+                      disabled={busy}
+                      aria-label={
+                        micListening
+                          ? "Ferma ascolto"
+                          : "Parla con Gemma"
+                      }
+                      title={
+                        micListening
+                          ? "Ferma ascolto"
+                          : "Parla con Gemma"
+                      }
+                    >
+                      <svg
+                        aria-hidden="true"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <rect x="9" y="2" width="6" height="12" rx="3" />
+                        <path d="M5 10a7 7 0 0 0 14 0" />
+                        <path d="M12 17v5" />
+                        <path d="M8 22h8" />
+                      </svg>
+                    </button>
+                  )}
+
                   <input
                     value={input}
                     onChange={(event) => setInput(event.target.value)}
-                    placeholder="Scrivi la tua richiesta…"
+                    placeholder={
+                      micListening
+                        ? "Ti ascolto…"
+                        : "Scrivi o parla con Gemma…"
+                    }
                     autoComplete="off"
                     aria-label="Messaggio per Gemma"
                   />
-                  <button disabled={busy || !input.trim()}>
+
+                  <button
+                    className="gemmaSendButton"
+                    disabled={busy || !input.trim()}
+                  >
                     Invia
                   </button>
                 </form>
+
+                {micError ? (
+                  <div className="gemmaMicError">{micError}</div>
+                ) : null}
 
                 <div className="gemmaComposerMeta">
                   <div>
