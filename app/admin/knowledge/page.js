@@ -798,6 +798,7 @@ function KnowledgeBody({ user, logout }) {
               <span>Area</span>
               <span>Stato</span>
               <span>Chunk</span>
+              <span>Azioni</span>
             </div>
 
             {documents.map((item) => (
