@@ -356,13 +356,7 @@ function KnowledgeBody({ user, logout }) {
       setJob(current);
       current = await watchKnowledgeJob(current);
 
-      const defaultSelection = (current?.proposals || [])
-        .filter(
-          (item) =>
-            item?.metadata_json?.safetyStatus === "SAFE",
-        )
-        .map((item) => item.id);
-      setSelectedIds(defaultSelection);
+      setSelectedIds([]);
       await loadJobs();
     } catch (caught) {
       setError(
@@ -377,6 +371,18 @@ function KnowledgeBody({ user, logout }) {
 
   async function applySelected() {
     if (!job?.id || selectedIds.length === 0 || busy) return;
+
+    if (
+      !window.confirm(
+        "Applicare " +
+          selectedIds.length +
+          " modifiche alla Knowledge condivisa usata da Lia, Alda e Gemma? " +
+          "L'operazione creerà snapshot per il rollback.",
+      )
+    ) {
+      return;
+    }
+
     setBusy("apply");
     setError("");
 
@@ -494,10 +500,7 @@ function KnowledgeBody({ user, logout }) {
       if (current?.status === "PREVIEW_READY") {
         setSelectedIds(
           (current.proposals || [])
-            .filter(
-              (item) =>
-                item?.metadata_json?.safetyStatus === "SAFE",
-            )
+            .filter((item) => item.selected)
             .map((item) => item.id),
         );
       }
