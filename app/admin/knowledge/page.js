@@ -427,6 +427,148 @@ function KnowledgeBody({ user, logout }) {
 
         {error ? <div className="internalError">{error}</div> : null}
 
+        <section className="adminPanel knowledgeManualPanel">
+          <div className="knowledgeManualHead">
+            <div>
+              <div className="panelTitle">
+                {manualEditId ? "Modifica Knowledge" : "Integra Knowledge"}
+              </div>
+              <p>
+                Aggiungi o correggi contenuti certificati. I nuovi documenti
+                partono come DRAFT per impostazione predefinita.
+              </p>
+            </div>
+            <button
+              type="button"
+              className="secondaryAction"
+              onClick={() => {
+                if (manualOpen) resetManualForm();
+                setManualOpen((current) => !current);
+              }}
+            >
+              {manualOpen ? "Chiudi" : "Nuovo documento"}
+            </button>
+          </div>
+
+          {manualOpen ? (
+            <form className="knowledgeManualForm" onSubmit={saveManualDocument}>
+              <label className="span2">
+                Titolo
+                <input
+                  value={manualForm.title}
+                  onChange={(event) =>
+                    setManualForm({ ...manualForm, title: event.target.value })
+                  }
+                  required
+                />
+              </label>
+
+              <label>
+                Servizio
+                <select
+                  value={manualForm.serviceType}
+                  onChange={(event) =>
+                    setManualForm({
+                      ...manualForm,
+                      serviceType: event.target.value,
+                    })
+                  }
+                >
+                  <option value="">Generale</option>
+                  <option value="MOBILE">Mobile</option>
+                  <option value="FIXED_NETWORK">Rete fissa</option>
+                  <option value="EMAIL">Email</option>
+                  <option value="PEC">PEC</option>
+                  <option value="ADMINISTRATIVE">Amministrativo</option>
+                  <option value="COMMERCIAL">Commerciale</option>
+                </select>
+              </label>
+
+              <label>
+                Stato
+                <select
+                  value={manualForm.status}
+                  onChange={(event) =>
+                    setManualForm({ ...manualForm, status: event.target.value })
+                  }
+                >
+                  <option value="DRAFT">DRAFT</option>
+                  <option value="ACTIVE">ACTIVE</option>
+                  <option value="ARCHIVED">ARCHIVED</option>
+                </select>
+              </label>
+
+              <label>
+                Area
+                <input
+                  value={manualForm.assistanceArea}
+                  onChange={(event) =>
+                    setManualForm({
+                      ...manualForm,
+                      assistanceArea: event.target.value,
+                    })
+                  }
+                />
+              </label>
+
+              <label>
+                Topic
+                <input
+                  value={manualForm.topic}
+                  onChange={(event) =>
+                    setManualForm({ ...manualForm, topic: event.target.value })
+                  }
+                />
+              </label>
+
+              <label className="span2">
+                Richieste coperte
+                <textarea
+                  rows={3}
+                  value={manualForm.usageHints}
+                  onChange={(event) =>
+                    setManualForm({
+                      ...manualForm,
+                      usageHints: event.target.value,
+                    })
+                  }
+                />
+              </label>
+
+              <label className="span2">
+                Contenuto certificato
+                <textarea
+                  rows={10}
+                  value={manualForm.content}
+                  onChange={(event) =>
+                    setManualForm({ ...manualForm, content: event.target.value })
+                  }
+                  required
+                />
+              </label>
+
+              <div className="knowledgeManualActions span2">
+                <button className="internalPrimaryButton" disabled={busy === "manual"}>
+                  {busy === "manual"
+                    ? "Salvataggio…"
+                    : manualEditId
+                      ? "Salva modifiche"
+                      : "Crea documento"}
+                </button>
+                {manualEditId ? (
+                  <button
+                    type="button"
+                    className="secondaryAction"
+                    onClick={resetManualForm}
+                  >
+                    Nuovo
+                  </button>
+                ) : null}
+              </div>
+            </form>
+          ) : null}
+        </section>
+
         <section className="statGrid">
           <article className="statCard">
             <span>Documenti</span>
