@@ -202,6 +202,14 @@ if (!store.includes("Gemma non ha ancora determinato il reparto corretto")) {
   failures.push("I ticket senza reparto possono ancora entrare nel backoffice.");
 }
 
+if (!chat.includes("trattala come un nuovo caso")) {
+  failures.push("Cambio argomento Gemma senza reset esplicito del caso precedente.");
+}
+
+if (!knowledge.includes("inferCurrentTurnService") || !knowledge.includes("topic-switch-scoped")) {
+  failures.push("Il retrieval non protegge il cambio argomento dal vecchio scope Fisso/Mobile.");
+}
+
 if (failures.length) {
   console.error(failures.join("\n"));
   process.exit(1);
