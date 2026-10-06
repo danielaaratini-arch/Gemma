@@ -12,6 +12,8 @@ export default function GemmaCustomerAuth({ children }) {
     name: "",
     email: "",
     password: "",
+    customerCode: "",
+    serviceNumber: "",
   });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -142,6 +144,39 @@ export default function GemmaCustomerAuth({ children }) {
                   required
                 />
               </label>
+            ) : null}
+
+            {mode === "REGISTER" ? (
+              <>
+                <label>
+                  Codice cliente
+                  <input
+                    value={form.customerCode}
+                    onChange={(event) =>
+                      setForm((current) => ({
+                        ...current,
+                        customerCode: event.target.value,
+                      }))
+                    }
+                    maxLength={80}
+                    placeholder="Facoltativo"
+                  />
+                </label>
+                <label>
+                  Numero linea o SIM
+                  <input
+                    value={form.serviceNumber}
+                    onChange={(event) =>
+                      setForm((current) => ({
+                        ...current,
+                        serviceNumber: event.target.value,
+                      }))
+                    }
+                    maxLength={80}
+                    placeholder="Facoltativo"
+                  />
+                </label>
+              </>
             ) : null}
 
             <label>
