@@ -19,6 +19,20 @@ function KnowledgeBody({ user, logout }) {
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
   const [noMatchHint, setNoMatchHint] = useState("");
+  const [manualOpen, setManualOpen] = useState(false);
+  const [manualEditId, setManualEditId] = useState(null);
+  const [manualForm, setManualForm] = useState({
+    title: "",
+    description: "",
+    content: "",
+    category: "GENERAL",
+    serviceType: "",
+    assistanceArea: "",
+    topic: "",
+    usageHints: "",
+    deviceScope: "",
+    status: "DRAFT",
+  });
 
   async function loadDocuments() {
     const params = new URLSearchParams({
@@ -47,7 +61,18 @@ function KnowledgeBody({ user, logout }) {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    setNoMatchHint(params.get("noMatch") || "");
+    const hint = params.get("noMatch") || "";
+    setNoMatchHint(hint);
+
+    if (hint) {
+      setManualOpen(true);
+      setManualForm((current) => ({
+        ...current,
+        title: hint.slice(0, 180),
+        usageHints: hint.slice(0, 1000),
+      }));
+    }
+
     void Promise.all([loadDocuments(), loadJobs()]).catch((caught) =>
       setError(
         caught instanceof Error
