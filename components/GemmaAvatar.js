@@ -71,9 +71,9 @@ function frameShoulderPortrait(model, camera, head, leftEye, rightEye) {
   // Stesso criterio portrait di Alda: inquadratura testa + spalle,
   // evitando busto intero e tagli della sommità della testa.
   const portraitHeight = Math.max(
-    headTopSpan * 3.9,
-    avatarSize.y * 0.34,
-    eyeDistance * 9.6,
+    headTopSpan * 3.45,
+    avatarSize.y * 0.285,
+    eyeDistance * 8.6,
   );
 
   const portraitWidth = Math.max(
