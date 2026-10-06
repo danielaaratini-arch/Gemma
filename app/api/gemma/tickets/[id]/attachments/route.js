@@ -7,6 +7,7 @@ import {
   MAX_FILES_PER_UPLOAD,
   validateAttachment,
 } from "../../../../../../lib/gemma-upload-rules";
+import { requireRole } from "../../../../../../lib/gemma-auth";
 
 export const runtime = "nodejs";
 
@@ -14,7 +15,14 @@ export async function POST(request, context) {
   try {
     const { id } = await context.params;
     const url = new URL(request.url);
-    const staff = url.searchParams.get("scope") === "staff";
+    const staffView = url.searchParams.get("scope") === "staff";
+    const staff = staffView
+      ? requireRole(request, ["ADMIN", "OPERATOR"])
+      : null;
+    if (staffView && !staff) {
+      return Response.json({ error: "Non autorizzato." }, { status: 401 });
+    }
+
     const session = customerKeyFromRequest(request);
     const formData = await request.formData();
     const files = formData.getAll("files").filter((item) => item instanceof File);
@@ -43,9 +51,9 @@ export async function POST(request, context) {
 
     const saved = await addTicketAttachments({
       ticketId: id,
-      customerKey: staff ? null : session.key,
+      customerKey: staffView ? null : session.key,
       files: prepared,
-      actorName: staff ? "Backoffice" : "Cliente",
+      actorName: staffView ? (staff?.name || staff?.email || "Backoffice") : "Cliente",
     });
 
     if (!saved) {
