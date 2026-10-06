@@ -178,6 +178,22 @@ if (!read("app/cliente/page.js").includes("Detta il messaggio")) {
   failures.push("Microfono area cliente Gemma mancante.");
 }
 
+if (!knowledge.includes("retrieveKnowledgeDetailed")) {
+  failures.push("Retrieval Knowledge Gemma non espone il risultato dettagliato.");
+}
+
+if (!knowledge.includes("service-scoped") || !knowledge.includes("general-fallback")) {
+  failures.push("Retrieval Fisso/Mobile senza scope o fallback generale.");
+}
+
+if (!chat.includes("knowledgeServiceHint(previousState)")) {
+  failures.push("Lo stato conversazionale non guida il retrieval Fisso/Mobile.");
+}
+
+if (!chat.includes("Punto in sospeso:") || !chat.includes("state?.checks")) {
+  failures.push("Il retrieval non usa il contesto diagnostico persistito.");
+}
+
 if (failures.length) {
   console.error(failures.join("\n"));
   process.exit(1);
