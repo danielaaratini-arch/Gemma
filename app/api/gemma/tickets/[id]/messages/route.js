@@ -25,7 +25,7 @@ export async function POST(request, context) {
     const requestedRole = body?.role === "OPERATOR" ? "OPERATOR" : "CUSTOMER";
 
     if (requestedRole === "OPERATOR") {
-      const staff = requireRole(request, ["ADMIN", "OPERATOR"]);
+      const staff = await requireRole(request, ["ADMIN", "OPERATOR"]);
       if (!staff) {
         return Response.json({ error: "Non autorizzato." }, { status: 401 });
       }
