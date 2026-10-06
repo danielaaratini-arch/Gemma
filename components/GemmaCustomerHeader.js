@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 
-export default function GemmaCustomerHeader() {
+export default function GemmaCustomerHeader({ user, onLogout }) {
   return (
     <header className="gemmaCustomerHeader">
       <div className="gemmaCustomerHeaderCard">
@@ -15,7 +15,7 @@ export default function GemmaCustomerHeader() {
           <div className="gemmaCustomerTitle">
             <div>
               <h1>Cliente</h1>
-              <span>Area cliente Gemma</span>
+              <span>{user?.name || "Area cliente Gemma"}</span>
             </div>
             <p>Consulta i tuoi ticket e dialoga con l&apos;assistenza.</p>
           </div>
@@ -23,8 +23,9 @@ export default function GemmaCustomerHeader() {
 
         <div className="gemmaCustomerHeaderActions">
           <Link href="/">Torna a Gemma</Link>
-          <Link href="/backoffice">Backoffice</Link>
-          <Link href="/admin">Admin</Link>
+          <button type="button" onClick={onLogout}>
+            Esci
+          </button>
         </div>
       </div>
     </header>
