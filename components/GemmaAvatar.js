@@ -87,10 +87,10 @@ function frameShoulderPortrait(model, camera, head, leftEye, rightEye) {
     portraitWidth /
     (2 * Math.tan(fov / 2) * Math.max(camera.aspect, 0.01));
 
-  const distance = Math.max(distanceForHeight, distanceForWidth) * 1.05;
+  const distance = Math.max(distanceForHeight, distanceForWidth) * 1.055;
   const target = new Vector3(
     headPosition.x,
-    eyeCenterY - portraitHeight * 0.11,
+    eyeCenterY - portraitHeight * 0.085,
     MathUtils.lerp(headPosition.z, eyeCenterZ, 0.35),
   );
 
@@ -168,7 +168,7 @@ function GemmaModel({ status }) {
 
 export default function GemmaAvatar({ status }) {
   return (
-    <Canvas camera={{ position: [0, 0, 3], fov: 30 }} dpr={[1, 1.6]}>
+    <Canvas camera={{ position: [0, 0, 3], fov: 32 }} dpr={[1, 1.6]}>
       <ambientLight intensity={1.5} />
       <directionalLight position={[2, 3, 4]} intensity={2.4} />
       <directionalLight position={[-3, 1, 2]} intensity={1.2} />
