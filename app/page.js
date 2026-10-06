@@ -2,6 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { useEffect, useRef, useState } from "react";
+import { useGemmaSpeech } from "../components/useGemmaSpeech";
 
 const GemmaAvatar = dynamic(() => import("../components/GemmaAvatar"), {
   ssr: false,
@@ -35,12 +36,40 @@ function restoreConversation() {
   return [welcome];
 }
 
+function extractSpeechSegments(buffer, final = false) {
+  const segments = [];
+  let rest = buffer;
+
+  while (true) {
+    const match = rest.match(/^([\s\S]*?[.!?])(?=\s|$)/);
+    if (!match) break;
+    const segment = match[1].trim();
+    if (segment) segments.push(segment);
+    rest = rest.slice(match[0].length).trimStart();
+  }
+
+  if (!final && rest.length > 320) {
+    const splitAt = rest.lastIndexOf(" ", 280);
+    if (splitAt > 120) {
+      segments.push(rest.slice(0, splitAt).trim());
+      rest = rest.slice(splitAt + 1).trimStart();
+    }
+  }
+
+  if (final && rest.trim()) {
+    segments.push(rest.trim());
+    rest = "";
+  }
+
+  return { segments, rest };
+}
+
 export default function Home() {
   const [messages, setMessages] = useState([welcome]);
   const [hydrated, setHydrated] = useState(false);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
-  const [speaking, setSpeaking] = useState(false);
+  const { isSpeaking: speaking, begin: beginSpeech, enqueue: enqueueSpeech, stop: stopSpeech } = useGemmaSpeech();
   const [metrics, setMetrics] = useState(null);
   const listRef = useRef(null);
   const abortRef = useRef(null);
@@ -64,24 +93,6 @@ export default function Home() {
     });
   }, [messages, busy]);
 
-  function stopSpeech() {
-    if ("speechSynthesis" in window) speechSynthesis.cancel();
-    setSpeaking(false);
-  }
-
-  function speak(text) {
-    if (!("speechSynthesis" in window) || !text.trim()) return;
-
-    speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = "it-IT";
-    utterance.rate = 1.02;
-    utterance.onstart = () => setSpeaking(true);
-    utterance.onend = () => setSpeaking(false);
-    utterance.onerror = () => setSpeaking(false);
-    speechSynthesis.speak(utterance);
-  }
-
   function newConversation() {
     abortRef.current?.abort();
     stopSpeech();
@@ -98,7 +109,7 @@ export default function Home() {
     const question = input.trim();
     if (!question || busy) return;
 
-    stopSpeech();
+    beginSpeech();
 
     const context = [...messages, { role: "user", content: question }].slice(-40);
     setMessages([...context, { role: "assistant", content: "" }]);
@@ -126,6 +137,7 @@ export default function Home() {
       const decoder = new TextDecoder();
       let buffer = "";
       let answer = "";
+      let speechBuffer = "";
 
       while (true) {
         const { value, done } = await reader.read();
@@ -144,12 +156,21 @@ export default function Home() {
           }
 
           if (event.type === "delta") {
-            answer += String(event.content || "");
+            const delta = String(event.content || "");
+            answer += delta;
+            speechBuffer += delta;
+
             setMessages((current) => {
               const next = [...current];
               next[next.length - 1] = { role: "assistant", content: answer };
               return next;
             });
+
+            const extracted = extractSpeechSegments(speechBuffer, false);
+            speechBuffer = extracted.rest;
+            for (const segment of extracted.segments) {
+              enqueueSpeech(segment);
+            }
           }
 
           if (event.type === "done") {
@@ -162,7 +183,10 @@ export default function Home() {
         }
       }
 
-      if (answer.trim()) speak(answer);
+      const finalSpeech = extractSpeechSegments(speechBuffer, true);
+      for (const segment of finalSpeech.segments) {
+        enqueueSpeech(segment);
+      }
     } catch (error) {
       if (error?.name === "AbortError") return;
 
@@ -192,7 +216,7 @@ export default function Home() {
             TAAP <span>Gemma</span>
           </div>
           <div className="kicker">
-            Conversazione naturale, contesto continuo e knowledge consultata
+            Conversazione naturale, un passo alla volta e knowledge consultata
             senza scrivere sui sistemi di Lia o Alda.
           </div>
 
