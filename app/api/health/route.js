@@ -1,4 +1,5 @@
 import postgres from "postgres";
+import { ensureGemmaSchema } from "../../../lib/gemma-store";
 
 export const runtime = "nodejs";
 
@@ -6,7 +7,8 @@ export async function GET() {
   let database = {
     configured: Boolean(process.env.DATABASE_URL),
     reachable: false,
-    readOnlyTransaction: false,
+    knowledgeReadOnlyTransaction: false,
+    gemmaSchemaReady: false,
   };
 
   if (process.env.DATABASE_URL) {
@@ -17,24 +19,31 @@ export async function GET() {
     });
 
     try {
-      const check = await sql.begin("read only", async (tx) => {
+      await ensureGemmaSchema();
+
+      const readOnly = await sql.begin("read only", async (tx) => {
         const rows = await tx`
           SELECT current_setting('transaction_read_only') AS mode
         `;
-        return rows[0]?.mode;
+        return rows[0]?.mode === "on";
       });
+
+      const schemaRows = await sql`
+        SELECT
+          to_regclass('gemma.conversation') IS NOT NULL AS conversation,
+          to_regclass('gemma.ticket') IS NOT NULL AS ticket
+      `;
 
       database = {
         configured: true,
         reachable: true,
-        readOnlyTransaction: check === "on",
+        knowledgeReadOnlyTransaction: readOnly,
+        gemmaSchemaReady:
+          schemaRows[0]?.conversation === true &&
+          schemaRows[0]?.ticket === true,
       };
-    } catch {
-      database = {
-        configured: true,
-        reachable: false,
-        readOnlyTransaction: false,
-      };
+    } catch (error) {
+      console.error("Gemma health DB error", error);
     } finally {
       await sql.end({ timeout: 1 }).catch(() => {});
     }
@@ -44,11 +53,16 @@ export async function GET() {
     ok:
       Boolean(process.env.OPENAI_API_KEY) &&
       database.reachable &&
-      database.readOnlyTransaction,
+      database.knowledgeReadOnlyTransaction &&
+      database.gemmaSchemaReady,
     app: "Gemma",
     environment: process.env.VERCEL_ENV || "local",
     aiConfigured: Boolean(process.env.OPENAI_API_KEY),
     database,
-    writeEndpoints: 0,
+    isolation: {
+      sharedKnowledge: "read-only",
+      operationalWrites: "schema gemma",
+      liaAldaOperationalWrites: 0,
+    },
   });
 }
