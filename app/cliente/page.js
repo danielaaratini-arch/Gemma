@@ -21,6 +21,9 @@ export default function CustomerArea() {
   const [uploadBusy, setUploadBusy] = useState(false);
   const [uploadError, setUploadError] = useState("");
   const [pendingFiles, setPendingFiles] = useState([]);
+  const [ratingScore, setRatingScore] = useState(5);
+  const [ratingComment, setRatingComment] = useState("");
+  const [ratingSaved, setRatingSaved] = useState(false);
   const fileInputRef = useRef(null);
 
   async function loadTickets() {
@@ -84,6 +87,37 @@ export default function CustomerArea() {
   function formatFileSize(size) {
     if (size < 1024 * 1024) return Math.max(1, Math.round(size / 1024)) + " KB";
     return (size / (1024 * 1024)).toFixed(1) + " MB";
+  }
+
+  async function sendRating() {
+    if (!selectedId) return;
+    setBusy(true);
+    try {
+      const response = await fetch(
+        "/api/gemma/tickets/" + selectedId + "/rating",
+        {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            score: ratingScore,
+            comment: ratingComment.trim(),
+          }),
+        },
+      );
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data?.error || "Valutazione non salvata.");
+      }
+      setRatingSaved(true);
+    } catch (error) {
+      setUploadError(
+        error instanceof Error
+          ? error.message
+          : "Valutazione non salvata.",
+      );
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function sendReply(event) {
@@ -231,6 +265,40 @@ export default function CustomerArea() {
                 </div>
 
                 <TicketSummary ticket={detail} />
+
+                {["RESOLVED", "CLOSED"].includes(detail.status) ? (
+                  <section className="conversationCard ratingCard">
+                    <div className="panelTitle">Valuta l’assistenza</div>
+                    {ratingSaved ? (
+                      <div className="ratingThanks">Grazie per la tua valutazione.</div>
+                    ) : (
+                      <>
+                        <div className="ratingStars">
+                          {[1,2,3,4,5].map((score)=>(
+                            <button
+                              key={score}
+                              type="button"
+                              className={score <= ratingScore ? "active" : ""}
+                              onClick={()=>setRatingScore(score)}
+                              aria-label={score + " stelle"}
+                            >
+                              ★
+                            </button>
+                          ))}
+                        </div>
+                        <textarea
+                          value={ratingComment}
+                          onChange={(event)=>setRatingComment(event.target.value)}
+                          placeholder="Commento facoltativo…"
+                          rows={3}
+                        />
+                        <button className="internalPrimaryButton" onClick={()=>void sendRating()} disabled={busy}>
+                          Invia valutazione
+                        </button>
+                      </>
+                    )}
+                  </section>
+                ) : null}
 
                 <section className="conversationCard">
                   <div className="panelTitle">Conversazione e aggiornamenti</div>
