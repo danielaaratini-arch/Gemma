@@ -667,3 +667,196 @@ button,input{font:inherit}button{cursor:pointer}
   font-size:8px;
   line-height:1.4;
 }
+
+
+/* Gemma guided presentation layer */
+.gemmaGuideStage,
+.gemmaVideoStage{
+  position:absolute;
+  inset:0;
+  z-index:5;
+  display:flex;
+  min-height:0;
+  flex-direction:column;
+  background:linear-gradient(to bottom,#ffffff,#f0fdf9);
+  color:#0f172a;
+}
+.gemmaGuideHeader{
+  flex:0 0 auto;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  padding:14px 18px 10px;
+  border-bottom:1px solid #dbe3ec;
+  background:rgba(255,255,255,.96);
+}
+.gemmaGuideHeader strong{
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  font-size:14px;
+}
+.gemmaGuideHeader button{
+  flex:0 0 auto;
+  border:1px solid #cbd5e1;
+  border-radius:10px;
+  background:#fff;
+  padding:6px 10px;
+  color:#475569;
+  font-size:11px;
+  font-weight:800;
+  cursor:pointer;
+}
+.gemmaGuideBody{
+  min-height:0;
+  flex:1 1 auto;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:9px;
+  overflow:auto;
+  padding:10px 14px 12px;
+}
+.gemmaGuideProgress{
+  align-self:flex-start;
+  color:#64748b;
+  font-size:10px;
+  font-weight:800;
+  letter-spacing:.03em;
+  text-transform:uppercase;
+}
+.gemmaGuideImageFrame{
+  position:relative;
+  width:auto;
+  max-width:100%;
+  max-height:calc(100% - 105px);
+  overflow:hidden;
+  border:1px solid #dbe3ec;
+  border-radius:14px;
+  background:#fff;
+  box-shadow:0 10px 28px rgba(15,23,42,.08);
+}
+.gemmaGuideImage{
+  display:block;
+  width:100%;
+  height:100%;
+  object-fit:contain;
+}
+.gemmaGuideTarget{
+  position:absolute;
+  border:2px solid #10b981;
+  border-radius:9px;
+  background:rgba(16,185,129,.12);
+  box-shadow:0 0 0 2px rgba(255,255,255,.8);
+  pointer-events:none;
+}
+.gemmaGuideTarget span{
+  position:absolute;
+  left:50%;
+  bottom:calc(100% + 4px);
+  transform:translateX(-50%);
+  max-width:140px;
+  padding:3px 6px;
+  border-radius:7px;
+  background:#047857;
+  color:#fff;
+  font-size:9px;
+  font-weight:800;
+  white-space:nowrap;
+}
+.gemmaGuideText{
+  width:100%;
+  margin:0;
+  color:#334155;
+  font-size:12px;
+  line-height:1.45;
+  text-align:center;
+  white-space:pre-wrap;
+}
+.gemmaGuideControls{
+  width:100%;
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  margin-top:auto;
+}
+.gemmaGuideControls button{
+  min-width:92px;
+  border:1px solid #10b981;
+  border-radius:11px;
+  background:#fff;
+  padding:7px 12px;
+  color:#047857;
+  font-size:11px;
+  font-weight:800;
+  cursor:pointer;
+}
+.gemmaGuideControls button:last-child{
+  margin-left:auto;
+  background:#059669;
+  color:#fff;
+}
+.gemmaGuideControls button:disabled{
+  opacity:.35;
+  cursor:default;
+}
+.gemmaVideoStage{
+  padding-bottom:12px;
+}
+.gemmaVideoStage iframe,
+.gemmaVideoStage video{
+  width:calc(100% - 28px);
+  flex:1 1 auto;
+  min-height:0;
+  margin:12px 14px 0;
+  border:0;
+  border-radius:14px;
+  background:#000;
+}
+.gemmaPresentationError{
+  position:absolute;
+  z-index:8;
+  left:14px;
+  right:14px;
+  bottom:12px;
+  border:1px solid #fecaca;
+  border-radius:11px;
+  background:rgba(254,242,242,.96);
+  padding:8px 10px;
+  color:#991b1b;
+  font-size:10px;
+  line-height:1.35;
+  text-align:center;
+}
+
+@media(max-width:767px){
+  .gemmaGuideHeader{
+    padding:9px 11px 7px;
+  }
+  .gemmaGuideHeader strong{
+    font-size:12px;
+  }
+  .gemmaGuideBody{
+    gap:6px;
+    padding:7px 9px 9px;
+  }
+  .gemmaGuideImageFrame{
+    max-height:calc(100% - 92px);
+  }
+  .gemmaGuideText{
+    font-size:10.5px;
+    line-height:1.35;
+  }
+  .gemmaGuideControls button{
+    min-width:78px;
+    padding:6px 9px;
+    font-size:10px;
+  }
+  .gemmaVideoStage iframe,
+  .gemmaVideoStage video{
+    width:calc(100% - 18px);
+    margin:9px 9px 0;
+  }
+}

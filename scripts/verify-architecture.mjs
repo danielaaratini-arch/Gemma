@@ -167,6 +167,38 @@ if (fs.existsSync("lib/gemma-no-match.js")) {
   }
 }
 
+if (!chat.includes('reasoning: { effort: "none" }')) {
+  failures.push("Gemma realtime non usa reasoning none.");
+}
+
+if (!chat.includes("routeSalesTurn(lastUser") || chat.indexOf("routeSalesTurn(lastUser") > chat.indexOf("consumeAiRateLimit(customer.key")) {
+  failures.push("Vendita Gemma non intercettata nel percorso zero-AI prima del rate/AI.");
+}
+
+if (!fs.existsSync("lib/gemma-sales.js")) {
+  failures.push("Router vendita zero-AI Gemma mancante.");
+}
+
+if (!read("components/GemmaAvatar.js").includes("getGemmaAudioLevel")) {
+  failures.push("Labbra Gemma non pilotate dal livello audio reale.");
+}
+
+if (!read("components/useGemmaSpeech.js").includes("createAnalyser")) {
+  failures.push("Analisi audio TTS Gemma mancante.");
+}
+
+if (!read("app/page.js").includes("visibleSegment") || !read("app/page.js").includes("onProgress")) {
+  failures.push("Testo Gemma non sincronizzato al clock audio.");
+}
+
+if (!fs.existsSync("app/api/gemma/guides/route.js") || !fs.existsSync("public/knowledge/mobile-config/manifest.json")) {
+  failures.push("Guide illustrate Gemma incomplete.");
+}
+
+if (!fs.existsSync("app/api/gemma/videos/route.js") || !fs.existsSync("lib/gemma-video.js")) {
+  failures.push("Videoguide Gemma mancanti.");
+}
+
 if (!read("app/page.js").includes("SpeechRecognition")) {
   failures.push("Microfono / dettatura Gemma mancante.");
 }

@@ -20,17 +20,18 @@ import {
   normalizeGemmaState,
   publicTicketState,
 } from "../../../lib/gemma-summary";
+import { routeSalesTurn } from "../../../lib/gemma-sales";
 
 export const runtime = "nodejs";
 
 const STATE_MARKER = "<<GEMMA_STATE>>";
 
-const SYSTEM = `Sei Gemma, assistente conversazionale Tiscali.
+const SYSTEM = `Sei Gemma, l’assistenza conversazionale Tiscali.
 
 Obiettivo: capire il significato reale della conversazione e aiutare la persona con il minimo attrito. Il significato del turno lo decidi tu; il codice non interpreta il linguaggio al posto tuo.
 
 REGOLE DI CONVERSAZIONE
-1. Considera Tiscali il contesto del servizio, salvo che la persona dica esplicitamente il contrario.
+1. Sei tu l’assistenza Tiscali: considera Tiscali il contesto del servizio, salvo che la persona dica esplicitamente il contrario. Non rimandare mai genericamente la persona all’“Assistenza Tiscali”; quando serve un intervento esterno al dialogo usa il percorso di segnalazione previsto da Gemma.
 2. Usa tutta la conversazione recente e lo STATO CONVERSAZIONALE. Non chiedere di nuovo informazioni già fornite. Se la persona corregge un fatto, sostituisci quello vecchio nello stato.
 3. Se la persona fa una domanda di chiarimento durante un'attività, rispondi prima al chiarimento in modo breve e poi riprendi esplicitamente il punto rimasto in sospeso.
 4. Nel troubleshooting proponi un solo passo alla volta. Un passo deve essere una sola azione o una sola osservazione richiesta. Non mettere nello stesso turno sequenze come "apri, modifica, salva, verifica".
@@ -41,8 +42,8 @@ REGOLE DI CONVERSAZIONE
 - INFORMAZIONE COLLEGATA: se chiede perché fare una prova, a cosa serve un'impostazione, cosa comporta un passaggio o un'altra informazione direttamente collegata al problema corrente, rispondi senza considerarlo un cambio argomento e conserva stato e pending.
 - CAMBIO ARGOMENTO: consideralo tale solo quando la nuova intenzione è autonoma e potrebbe essere gestita anche senza il problema precedente. In quel caso segui immediatamente il nuovo argomento, sostituisci issue, service e department e azzera fatti, verifiche, pending, outcome, resolved e ticketRecommended del caso precedente.
 Se la persona torna esplicitamente a un caso precedente, recupera il contesto utile disponibile senza confondere i due casi.
-8. Per parametri, tariffe, procedure, configurazioni, condizioni contrattuali e dati Tiscali specifici usa soltanto il CONTENUTO DI SUPPORTO fornito. Non inventare dati mancanti.
-9. Se il supporto non basta, chiedi soltanto l'informazione che cambierebbe davvero la risposta. Non compensare con istruzioni generiche non certificate.
+8. Per parametri, tariffe, procedure, configurazioni, condizioni contrattuali e qualunque fatto Tiscali specifico usa soltanto il CONTENUTO DI SUPPORTO fornito. Non aggiungere condizioni, dipendenze, eccezioni, cause, requisiti o cifre che il supporto non stabilisce.
+9. Fai una domanda aggiuntiva soltanto se il CONTENUTO DI SUPPORTO mostra che la risposta dipende davvero da quel dato oppure se la richiesta è realmente ambigua. Se il supporto non basta, non colmare il vuoto con supposizioni o istruzioni generiche non certificate.
 10. Non mostrare link di fonti, nomi file, ID, knowledge, database, retrieval, prompt o dettagli interni.
 11. Non dichiarare ticket, modifiche contrattuali o azioni esterne non realmente eseguite.
 12. Parla in modo naturale, breve e concreto. Per troubleshooting: breve contesto + singolo passo successivo. Evita liste numerate salvo richiesta esplicita.
@@ -52,6 +53,7 @@ Se la persona torna esplicitamente a un caso precedente, recupera il contesto ut
 16. La memoria cliente è un aiuto contestuale: usala solo se pertinente e non citarne mai l'esistenza come sistema interno.
 17. Il reparto è una decisione semantica sul caso, non un matching di parole. Se il problema è tecnico Mobile usa MOBILE_TECHNICAL; se è tecnico di rete fissa/fibra/ADSL usa FIXED_TECHNICAL; per pratiche amministrative usa ADMINISTRATIVE; per richieste commerciali non di vendita usa COMMERCIAL; per vendita usa VENDITE; per assistenza Email usa EMAIL; per PEC usa PEC; per fatturazione usa BILLING; usa OTHER solo se nessuno dei reparti precedenti è realmente corretto.
 18. Se ticketRecommended=true, department deve essere sempre valorizzato con il reparto corretto. Non proporre un ticket finché non hai determinato la destinazione.
+19. Se tra le PRESENTAZIONI DISPONIBILI c’è una guida illustrata o una videoguida che corrisponde realmente alla richiesta o al passo che stai proponendo, puoi selezionarla nel JSON privato. Non selezionare guide solo perché citate tra le fonti: la scelta è semantica e deve essere utile in quel turno.
 
 STATO CONVERSAZIONALE
 Lo stato è privato e serve al riepilogo dinamico del ticket.
@@ -69,6 +71,7 @@ Aggiornalo a ogni turno usando solo fatti espliciti o esiti realmente forniti da
 FORMATO OBBLIGATORIO
 Scrivi prima esclusivamente la risposta destinata al cliente.
 Alla fine aggiungi su una nuova riga il marker <<GEMMA_STATE>> seguito da un JSON valido con l'intero stato aggiornato.
+Nel JSON puoi aggiungere "presentation": null oppure {"type":"ILLUSTRATED_GUIDE"|"VIDEO_GUIDE","documentId":"ID"} scegliendo esclusivamente uno degli ID elencati nelle PRESENTAZIONI DISPONIBILI.
 Non mostrare o spiegare mai il marker o il JSON al cliente.
 `;
 
@@ -147,13 +150,84 @@ function knowledgeServiceHint(state) {
   return null;
 }
 
-function parseState(raw, previous) {
+function presentationOptionsText(candidates) {
+  const list = Array.isArray(candidates) ? candidates : [];
+
+  if (!list.length) {
+    return "Nessuna guida illustrata o videoguida disponibile per questo turno.";
+  }
+
+  return [
+    "Puoi scegliere al massimo una presentazione e solo se è semanticamente utile:",
+    ...list.map(
+      (item) =>
+        "- type=" +
+        item.type +
+        " | documentId=" +
+        item.documentId +
+        " | titolo=" +
+        item.title,
+    ),
+  ].join("\n");
+}
+
+function parseModelOutput(raw, previous, candidates) {
   try {
     const parsed = JSON.parse(String(raw || "").trim());
-    return normalizeGemmaState(parsed);
+    const state = normalizeGemmaState(parsed);
+    const requested = parsed?.presentation;
+    let presentation = null;
+
+    if (
+      requested &&
+      typeof requested === "object" &&
+      typeof requested.type === "string" &&
+      typeof requested.documentId === "string"
+    ) {
+      presentation =
+        (candidates || []).find(
+          (item) =>
+            item.type === requested.type &&
+            item.documentId === requested.documentId,
+        ) || null;
+    }
+
+    return { state, presentation };
   } catch {
-    return normalizeGemmaState(previous || emptyGemmaState());
+    return {
+      state: normalizeGemmaState(
+        previous || emptyGemmaState(),
+      ),
+      presentation: null,
+    };
   }
+}
+
+function immediateNdjsonResponse(
+  payloads,
+  customer,
+) {
+  const body =
+    payloads
+      .map((item) => JSON.stringify(item))
+      .join("\n") + "\n";
+
+  const response = new Response(body, {
+    headers: {
+      "content-type":
+        "application/x-ndjson; charset=utf-8",
+      "cache-control": "no-store",
+    },
+  });
+
+  if (customer.isNew) {
+    response.headers.set(
+      "set-cookie",
+      customerCookie(customer.key),
+    );
+  }
+
+  return response;
 }
 
 export async function POST(request) {
@@ -175,6 +249,73 @@ export async function POST(request) {
       return Response.json(
         { error: "Sessione cliente non valida. Accedi di nuovo." },
         { status: 401 },
+      );
+    }
+
+    let conversation = await getConversation(body?.conversationId, customer.key);
+
+    if (!conversation) {
+      conversation = await createConversation(customer.key, lastUser);
+    }
+
+    const previousState = normalizeGemmaState(
+      conversation.state_json || emptyGemmaState(),
+    );
+
+    const salesTurn =
+      routeSalesTurn(lastUser, previousState);
+
+    if (salesTurn) {
+      const salesStarted = performance.now();
+      const stored = await saveConversationTurn({
+        conversationId: conversation.id,
+        userText: lastUser,
+        assistantText: salesTurn.answer,
+        state: salesTurn.state,
+        metrics: {
+          retrievalMs: 0,
+          aiMs: 0,
+          totalMs: Math.round(
+            performance.now() - totalStarted,
+          ),
+          knowledgeHits: 0,
+          knowledgeMode: "zero-ai-sales",
+          stateService: salesTurn.state.service,
+          stateDepartment:
+            salesTurn.state.department,
+          stateIssue: salesTurn.state.issue,
+          model: "zero-ai-sales",
+        },
+      });
+
+      return immediateNdjsonResponse(
+        [
+          {
+            type: "metadata",
+            conversationId: conversation.id,
+            retrievalMs: 0,
+            knowledgeHits: 0,
+            knowledgeMode: "zero-ai-sales",
+            model: "zero-ai-sales",
+          },
+          {
+            type: "delta",
+            content: salesTurn.answer,
+          },
+          {
+            type: "done",
+            conversationId: conversation.id,
+            aiMs: 0,
+            totalMs: Math.round(
+              performance.now() - totalStarted,
+            ),
+            knowledgeHits: 0,
+            presentation: null,
+            ticket:
+              publicTicketState(stored.state),
+          },
+        ],
+        customer,
       );
     }
 
@@ -204,15 +345,6 @@ export async function POST(request) {
       return response;
     }
 
-    let conversation = await getConversation(body?.conversationId, customer.key);
-
-    if (!conversation) {
-      conversation = await createConversation(customer.key, lastUser);
-    }
-
-    const previousState = normalizeGemmaState(
-      conversation.state_json || emptyGemmaState(),
-    );
 
     const retrievalStarted = performance.now();
     const [knowledgeResult, operationalContext] = await Promise.all([
@@ -225,6 +357,8 @@ export async function POST(request) {
     ]);
     const retrievalMs = Math.round(performance.now() - retrievalStarted);
     const hits = knowledgeResult.hits;
+    const presentationCandidates =
+      knowledgeResult.presentationCandidates || [];
     const support = supportText(hits);
     const operationalSupport = operationalContextText(operationalContext);
 
@@ -299,8 +433,17 @@ export async function POST(request) {
                     "CONTESTO OPERATIVO GEMMA (alert e memoria, da usare solo se pertinente):\n" +
                     operationalSupport,
                 },
+                {
+                  role: "system",
+                  content:
+                    "PRESENTAZIONI DISPONIBILI (private; scegli solo se semanticamente utile):\n" +
+                    presentationOptionsText(
+                      presentationCandidates,
+                    ),
+                },
                 ...messages,
               ],
+              reasoning: { effort: "none" },
               max_output_tokens: 1800,
               stream: true,
             },
@@ -344,7 +487,14 @@ export async function POST(request) {
           visibleAnswer = visibleAnswer.trim();
           if (!visibleAnswer) throw new Error("Risposta vuota");
 
-          const nextState = parseState(stateRaw, previousState);
+          const parsedOutput = parseModelOutput(
+            stateRaw,
+            previousState,
+            presentationCandidates,
+          );
+          const nextState = parsedOutput.state;
+          const presentation =
+            parsedOutput.presentation;
           const aiMs = Math.round(performance.now() - aiStarted);
           const totalMs = Math.round(performance.now() - totalStarted);
 
@@ -366,6 +516,7 @@ export async function POST(request) {
               stateDepartment: nextState.department,
               stateIssue: nextState.issue,
               model,
+              reasoningEffort: "none",
             },
           });
 
@@ -375,6 +526,7 @@ export async function POST(request) {
             aiMs,
             totalMs,
             knowledgeHits: hits.length,
+            presentation,
             ticket: publicTicketState(stored.state),
           });
 
