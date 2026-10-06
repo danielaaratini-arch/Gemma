@@ -12,6 +12,7 @@ const adminItems = [
   ["/admin/ai-router", "AI Router"],
   ["/admin/gradimento", "Gradimento"],
   ["/admin/knowledge", "Knowledge"],
+  ["/admin/no-match", "No Match"],
   ["/conversations", "Conversazioni"],
   ["/reports", "Report"],
 ];
