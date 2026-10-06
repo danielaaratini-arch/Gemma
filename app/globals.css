@@ -279,3 +279,42 @@ button,input{font:inherit}button{cursor:pointer}
  .attachmentItem{width:100%;justify-content:space-between}
  .attachmentItem span{max-width:70vw}
 }
+
+
+/* Customer ticket composer: attachment UX like chat apps */
+.ticketChatComposer{margin-top:12px;border:1px solid #dbe3ec;border-radius:18px;background:#fff;padding:8px;box-shadow:0 8px 24px rgba(15,23,42,.05)}
+.ticketComposerFiles{display:flex;flex-wrap:wrap;gap:7px;padding:2px 2px 8px}
+.ticketComposerFileChip{display:flex;align-items:center;gap:7px;max-width:min(100%,320px);border:1px solid #e2e8f0;border-radius:12px;background:#f8fafc;padding:7px 8px}
+.ticketComposerFileIcon{flex:0 0 auto;font-size:15px}
+.ticketComposerFileInfo{display:flex;min-width:0;flex-direction:column}
+.ticketComposerFileInfo strong{max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#334155;font-size:11px}
+.ticketComposerFileInfo small{margin-top:2px;color:#94a3b8;font-size:9px}
+.ticketComposerFileRemove{display:grid;width:22px;height:22px;flex:0 0 auto;place-items:center;border:0;border-radius:999px;background:transparent;color:#94a3b8;font-size:16px;line-height:1}
+.ticketComposerFileRemove:hover{background:#e2e8f0;color:#334155}
+.ticketComposerRow{display:flex;align-items:center;gap:7px}
+.ticketFileInput{display:none!important}
+.ticketAttachButton{display:grid;width:38px;height:38px;flex:0 0 auto;place-items:center;border:1px solid #e2e8f0;border-radius:999px;background:#fff;color:#475569;padding:0}
+.ticketAttachButton:hover{border-color:#10b981;background:#ecfdf5;color:#047857}
+.ticketAttachButton:disabled{cursor:not-allowed;opacity:.45}
+.ticketAttachButton svg{width:18px;height:18px}
+.ticketComposerText{min-width:0;flex:1;height:40px;border:0!important;border-radius:13px!important;background:#f8fafc!important;padding:0 12px!important;box-shadow:none!important;outline:none;font-size:13px}
+.ticketComposerText:focus{background:#fff!important;box-shadow:inset 0 0 0 1px #10b981!important}
+.ticketSendButton{height:38px;flex:0 0 auto;border:0;border-radius:999px;background:#059669;color:#fff;padding:0 14px;font-size:12px;font-weight:800}
+.ticketSendButton:hover{background:#047857}
+.ticketSendButton:disabled{cursor:not-allowed;opacity:.45}
+.ticketComposerHint{padding:6px 4px 0;color:#94a3b8;font-size:9px}
+.chatAttachmentBubble{display:flex;align-items:center;gap:9px;min-width:180px;max-width:300px;color:inherit;text-decoration:none}
+.chatAttachmentIcon{font-size:18px;flex:0 0 auto}
+.chatAttachmentInfo{display:flex;min-width:0;flex-direction:column}
+.chatAttachmentInfo strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px}
+.chatAttachmentInfo small{margin-top:2px;font-size:9px;opacity:.7}
+
+@media(max-width:767px){
+ .ticketChatComposer{padding:7px;border-radius:16px}
+ .ticketComposerFileChip{max-width:100%}
+ .ticketComposerFileInfo strong{max-width:58vw}
+ .ticketAttachButton{width:36px;height:36px}
+ .ticketComposerText{height:38px;font-size:12px}
+ .ticketSendButton{height:36px;padding:0 12px}
+ .ticketComposerHint{display:none}
+}
