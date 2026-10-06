@@ -2,6 +2,7 @@ import OpenAI from "openai";
 import { retrieveKnowledge, supportText } from "../../../lib/knowledge";
 import {
   createConversation,
+  consumeAiRateLimit,
   customerCookie,
   customerKeyFromRequest,
   getConversation,
@@ -104,6 +105,33 @@ export async function POST(request) {
     }
 
     const customer = customerKeyFromRequest(request);
+
+    const rateLimit = await consumeAiRateLimit(customer.key, {
+      limit: Number(process.env.GEMMA_AI_RATE_PER_MINUTE) || 30,
+      windowSeconds: 60,
+    });
+
+    if (!rateLimit.allowed) {
+      const response = Response.json(
+        {
+          error: "Hai inviato troppe richieste in poco tempo. Riprova tra qualche secondo.",
+          code: "RATE_LIMITED",
+        },
+        {
+          status: 429,
+          headers: {
+            "retry-after": String(rateLimit.retryAfter),
+          },
+        },
+      );
+
+      if (customer.isNew) {
+        response.headers.set("set-cookie", customerCookie(customer.key));
+      }
+
+      return response;
+    }
+
     let conversation = await getConversation(body?.conversationId, customer.key);
 
     if (!conversation) {

@@ -63,6 +63,26 @@ for (const route of ["app/cliente/page.js", "app/backoffice/page.js", "app/admin
   if (!fs.existsSync(route)) failures.push("Area mancante: " + route);
 }
 
+const dbModule = read("lib/db.js");
+const storeModule = read("lib/gemma-store.js");
+const ticketRoute = read("app/api/gemma/tickets/route.js");
+
+if (!dbModule.includes("GEMMA_DB_READ_POOL") || !dbModule.includes("GEMMA_DB_WRITE_POOL")) {
+  failures.push("Manca la separazione dei pool DB Gemma.");
+}
+
+if (!storeModule.includes("request_key") || !storeModule.includes("ON CONFLICT DO NOTHING")) {
+  failures.push("Manca l'idempotenza atomica dei ticket.");
+}
+
+if (!storeModule.includes("consumeAiRateLimit")) {
+  failures.push("Manca il rate limiting AI.");
+}
+
+if (!ticketRoute.includes("nextCursor")) {
+  failures.push("Manca la paginazione cursor-based dei ticket.");
+}
+
 if (failures.length) {
   console.error(failures.join("\n"));
   process.exit(1);

@@ -76,6 +76,7 @@ export default function Home() {
   const [conversationId, setConversationId] = useState(null);
   const [ticketOffer, setTicketOffer] = useState(null);
   const [openedTicket, setOpenedTicket] = useState(null);
+  const [ticketRequestKey, setTicketRequestKey] = useState(null);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const [ticketBusy, setTicketBusy] = useState(false);
@@ -118,6 +119,8 @@ export default function Home() {
     setMetrics(null);
     setTicketOffer(null);
     setOpenedTicket(null);
+    setTicketRequestKey(null);
+    setTicketRequestKey(null);
     setConversationId(null);
     setMessages([welcome]);
 
@@ -135,7 +138,7 @@ export default function Home() {
       const response = await fetch("/api/gemma/tickets", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ conversationId }),
+        body: JSON.stringify({ conversationId, requestKey: ticketRequestKey }),
       });
       const data = await response.json();
 
@@ -265,6 +268,11 @@ export default function Home() {
 
             if (streamEvent.ticket?.ticketRecommended) {
               setTicketOffer(streamEvent.ticket);
+              setTicketRequestKey(
+                typeof crypto !== "undefined" && crypto.randomUUID
+                  ? crypto.randomUUID()
+                  : String(Date.now()) + "-" + Math.random().toString(36).slice(2),
+              );
             }
           }
 
