@@ -1,3 +1,4 @@
+import { after } from "next/server";
 import {
   createTicket,
   customerCookie,
@@ -115,7 +116,7 @@ export async function POST(request) {
     });
 
     if (ticket) {
-      await notifyTicketCreated(ticket);
+      after(() => notifyTicketCreated(ticket));
     }
 
     const response = Response.json({ ticket }, { status: 201 });
