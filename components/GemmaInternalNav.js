@@ -10,6 +10,7 @@ const adminItems = [
   ["/admin/memory", "Memory"],
   ["/admin/ai-router", "AI Router"],
   ["/admin/gradimento", "Gradimento"],
+  ["/admin/knowledge", "Knowledge"],
   ["/conversations", "Conversazioni"],
 ];
 
