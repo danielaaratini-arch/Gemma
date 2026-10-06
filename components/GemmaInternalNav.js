@@ -9,7 +9,6 @@ const adminItems = [
   ["/admin/users", "Accessi"],
   ["/admin/faults", "Alert fault"],
   ["/admin/memory", "Memory"],
-  ["/admin/ai-router", "AI Router"],
   ["/admin/gradimento", "Gradimento"],
   ["/admin/knowledge", "Knowledge"],
   ["/admin/no-match", "No Match"],
