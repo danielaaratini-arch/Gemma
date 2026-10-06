@@ -68,12 +68,11 @@ function frameShoulderPortrait(model, camera, head, leftEye, rightEye) {
   camera.fov = 32;
   const fov = MathUtils.degToRad(camera.fov);
 
-  // Stesso criterio portrait di Alda: inquadratura testa + spalle,
-  // evitando busto intero e tagli della sommità della testa.
+  // Ritratto stretto come Alda: testa interamente nel viewport e solo un tratto di spalle.
   const portraitHeight = Math.max(
-    headTopSpan * 3.45,
-    avatarSize.y * 0.285,
-    eyeDistance * 8.6,
+    headTopSpan * 3.15,
+    avatarSize.y * 0.26,
+    eyeDistance * 7.8,
   );
 
   const portraitWidth = Math.max(
@@ -87,10 +86,10 @@ function frameShoulderPortrait(model, camera, head, leftEye, rightEye) {
     portraitWidth /
     (2 * Math.tan(fov / 2) * Math.max(camera.aspect, 0.01));
 
-  const distance = Math.max(distanceForHeight, distanceForWidth) * 1.055;
+  const distance = Math.max(distanceForHeight, distanceForWidth) * 1.0;
   const target = new Vector3(
     headPosition.x,
-    eyeCenterY - portraitHeight * 0.085,
+    eyeCenterY - portraitHeight * 0.055,
     MathUtils.lerp(headPosition.z, eyeCenterZ, 0.35),
   );
 
