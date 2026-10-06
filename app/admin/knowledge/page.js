@@ -713,6 +713,24 @@ function KnowledgeBody({ user, logout }) {
                     <small>
                       {proposal.source_name} · {proposal.source_url}
                     </small>
+                    {(proposal?.metadata_json?.previousPreview ||
+                      proposal?.metadata_json?.nextPreview) ? (
+                      <details className="knowledgeProposalDiff">
+                        <summary>Confronta contenuto</summary>
+                        {proposal?.metadata_json?.previousPreview ? (
+                          <div>
+                            <b>Prima</b>
+                            <pre>{proposal.metadata_json.previousPreview}</pre>
+                          </div>
+                        ) : null}
+                        {proposal?.metadata_json?.nextPreview ? (
+                          <div>
+                            <b>Dopo</b>
+                            <pre>{proposal.metadata_json.nextPreview}</pre>
+                          </div>
+                        ) : null}
+                      </details>
+                    ) : null}
                     {proposal?.metadata_json?.safetyStatus !== "SAFE" ? (
                       <em>
                         Revisione richiesta:{" "}
