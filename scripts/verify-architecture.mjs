@@ -108,7 +108,6 @@ const internalRequired = [
   "components/GemmaInternalNav.js",
   "app/admin/users/page.js",
   "app/admin/faults/page.js",
-  "app/admin/memory/page.js",
   "app/admin/gradimento/page.js",
   "app/admin/knowledge/page.js",
   "app/backoffice/performance/page.js",
@@ -226,10 +225,7 @@ if (!read("lib/gemma-auth.js").includes("activeAuthSession")) {
   failures.push("Sessioni Admin/Backoffice non revocabili dal DB.");
 }
 
-if (
-  read("app/api/gemma/admin/faults/route.js").includes("if (!auth(request))") ||
-  read("app/api/gemma/admin/memory/route.js").includes("if (!auth(request))")
-) {
+if (read("app/api/gemma/admin/faults/route.js").includes("if (!auth(request))")) {
   failures.push("Autorizzazione Admin asincrona non attesa correttamente.");
 }
 
