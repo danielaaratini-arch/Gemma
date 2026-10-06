@@ -5,6 +5,13 @@ import GemmaCustomerHeader from "../../components/GemmaCustomerHeader";
 import GemmaCustomerAuth from "../../components/GemmaCustomerAuth";
 import TicketSummary from "../../components/TicketSummary";
 
+function urlBase64ToUint8Array(value) {
+  const padding = "=".repeat((4 - (value.length % 4)) % 4);
+  const base64 = (value + padding).replace(/-/g, "+").replace(/_/g, "/");
+  const raw = window.atob(base64);
+  return Uint8Array.from(raw, (character) => character.charCodeAt(0));
+}
+
 function dateTime(value) {
   if (!value) return "";
   return new Intl.DateTimeFormat("it-IT", {
@@ -28,6 +35,12 @@ function CustomerAreaBody({ user, logout }) {
   const [micSupported, setMicSupported] = useState(false);
   const [micListening, setMicListening] = useState(false);
   const [micError, setMicError] = useState("");
+  const [pushSupported, setPushSupported] = useState(false);
+  const [pushState, setPushState] = useState("loading");
+  const [pushBusy, setPushBusy] = useState(false);
+  const [pushError, setPushError] = useState("");
+  const pushPublicKeyRef = useRef("");
+  const pushRegistrationRef = useRef(null);
   const fileInputRef = useRef(null);
   const recognitionRef = useRef(null);
   const recognitionPrefixRef = useRef("");
@@ -38,7 +51,19 @@ function CustomerAreaBody({ user, logout }) {
     const data = await response.json();
     const rows = Array.isArray(data.tickets) ? data.tickets : [];
     setTickets(rows);
-    if (!selectedId && rows[0]?.id) setSelectedId(rows[0].id);
+    const requestedTicket =
+      typeof window !== "undefined"
+        ? new URLSearchParams(window.location.search).get("ticket")
+        : null;
+    const preferred = requestedTicket
+      ? rows.find((item) => item.id === requestedTicket)
+      : null;
+
+    if (preferred?.id) {
+      setSelectedId(preferred.id);
+    } else if (!selectedId && rows[0]?.id) {
+      setSelectedId(rows[0].id);
+    }
   }
 
   async function loadDetail(id) {
@@ -55,6 +80,67 @@ function CustomerAreaBody({ user, logout }) {
 
   useEffect(() => {
     void loadTickets();
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function initializePush() {
+      if (
+        typeof window === "undefined" ||
+        !("serviceWorker" in navigator) ||
+        !("PushManager" in window) ||
+        !("Notification" in window)
+      ) {
+        if (!cancelled) setPushState("unsupported");
+        return;
+      }
+
+      setPushSupported(true);
+
+      try {
+        const response = await fetch("/api/gemma/push", {
+          cache: "no-store",
+        });
+        const data = await response.json();
+
+        if (!response.ok || !data?.configured || !data?.publicKey) {
+          if (!cancelled) setPushState("unconfigured");
+          return;
+        }
+
+        pushPublicKeyRef.current = data.publicKey;
+
+        const registration = await navigator.serviceWorker.register(
+          "/gemma-push-sw.js",
+          { scope: "/" },
+        );
+        pushRegistrationRef.current = registration;
+
+        const subscription = await registration.pushManager.getSubscription();
+
+        if (!cancelled) {
+          if (subscription) {
+            setPushState("enabled");
+          } else if (Notification.permission === "denied") {
+            setPushState("denied");
+          } else {
+            setPushState("disabled");
+          }
+        }
+      } catch {
+        if (!cancelled) {
+          setPushState("error");
+          setPushError("Non riesco a verificare le notifiche in questo momento.");
+        }
+      }
+    }
+
+    void initializePush();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
@@ -130,6 +216,107 @@ function CustomerAreaBody({ user, logout }) {
     setMicError("");
     void loadDetail(selectedId);
   }, [selectedId]);
+
+  async function enablePushNotifications() {
+    if (!pushSupported || pushBusy) return;
+
+    setPushBusy(true);
+    setPushError("");
+
+    try {
+      const permission = await Notification.requestPermission();
+      if (permission !== "granted") {
+        setPushState(permission === "denied" ? "denied" : "disabled");
+        return;
+      }
+
+      let registration = pushRegistrationRef.current;
+      if (!registration) {
+        registration = await navigator.serviceWorker.register(
+          "/gemma-push-sw.js",
+          { scope: "/" },
+        );
+        pushRegistrationRef.current = registration;
+      }
+
+      const publicKey = pushPublicKeyRef.current;
+      if (!publicKey) {
+        throw new Error("Configurazione push non disponibile.");
+      }
+
+      let subscription = await registration.pushManager.getSubscription();
+      if (!subscription) {
+        subscription = await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(publicKey),
+        });
+      }
+
+      const response = await fetch("/api/gemma/push", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ subscription: subscription.toJSON() }),
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        await subscription.unsubscribe().catch(() => {});
+        throw new Error(data?.error || "Notifiche non attivate.");
+      }
+
+      setPushState("enabled");
+    } catch (error) {
+      setPushState("error");
+      setPushError(
+        error instanceof Error
+          ? error.message
+          : "Notifiche non attivate.",
+      );
+    } finally {
+      setPushBusy(false);
+    }
+  }
+
+  async function disablePushNotifications() {
+    if (pushBusy) return;
+
+    setPushBusy(true);
+    setPushError("");
+
+    try {
+      const registration =
+        pushRegistrationRef.current ||
+        (await navigator.serviceWorker.getRegistration("/"));
+
+      const subscription =
+        registration ? await registration.pushManager.getSubscription() : null;
+
+      if (subscription) {
+        const response = await fetch("/api/gemma/push", {
+          method: "DELETE",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ endpoint: subscription.endpoint }),
+        });
+
+        if (!response.ok) {
+          const data = await response.json().catch(() => ({}));
+          throw new Error(data?.error || "Notifiche non disattivate.");
+        }
+
+        await subscription.unsubscribe();
+      }
+
+      setPushState("disabled");
+    } catch (error) {
+      setPushError(
+        error instanceof Error
+          ? error.message
+          : "Notifiche non disattivate.",
+      );
+    } finally {
+      setPushBusy(false);
+    }
+  }
 
   function toggleMicrophone() {
     if (!micSupported || busy || uploadBusy) return;
@@ -376,6 +563,69 @@ function CustomerAreaBody({ user, logout }) {
                     <span>{detail.department || "OTHER"}</span>
                   </div>
                 </div>
+
+                <section className="conversationCard">
+                  <div className="panelTitle">Notifiche ticket</div>
+                  <p>
+                    Ricevi una notifica sul dispositivo quando il Backoffice
+                    cambia lo stato della tua segnalazione. Le email restano
+                    attive.
+                  </p>
+
+                  {pushState === "enabled" ? (
+                    <div className="ratingThanks">
+                      Notifiche push attive su questo dispositivo.
+                    </div>
+                  ) : null}
+
+                  {pushState === "denied" ? (
+                    <div className="internalError">
+                      Le notifiche sono bloccate nelle impostazioni del browser.
+                    </div>
+                  ) : null}
+
+                  {pushState === "unsupported" ? (
+                    <div className="emptyState">
+                      Questo browser non supporta le notifiche push web.
+                    </div>
+                  ) : null}
+
+                  {pushState === "unconfigured" ? (
+                    <div className="emptyState">
+                      Il servizio notifiche non è ancora configurato.
+                    </div>
+                  ) : null}
+
+                  {pushError ? (
+                    <div className="internalError">{pushError}</div>
+                  ) : null}
+
+                  {pushSupported &&
+                  !["unsupported", "unconfigured", "denied"].includes(
+                    pushState,
+                  ) ? (
+                    <button
+                      type="button"
+                      className={
+                        pushState === "enabled"
+                          ? "secondaryAction"
+                          : "internalPrimaryButton"
+                      }
+                      disabled={pushBusy}
+                      onClick={() =>
+                        void (pushState === "enabled"
+                          ? disablePushNotifications()
+                          : enablePushNotifications())
+                      }
+                    >
+                      {pushBusy
+                        ? "Aggiornamento…"
+                        : pushState === "enabled"
+                          ? "Disattiva notifiche"
+                          : "Attiva notifiche"}
+                    </button>
+                  ) : null}
+                </section>
 
                 <TicketSummary ticket={detail} />
 
