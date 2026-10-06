@@ -214,6 +214,72 @@ if (!chat.includes("CHIARIMENTO:") || !chat.includes("INFORMAZIONE COLLEGATA:") 
   failures.push("Gemma non distingue chiarimenti, informazioni collegate e cambio argomento.");
 }
 
+
+if (!fs.existsSync("components/GemmaCustomerAuth.js")) {
+  failures.push("Autenticazione Area Cliente Gemma mancante.");
+}
+
+if (!read("app/cliente/page.js").includes("GemmaCustomerAuth")) {
+  failures.push("Area Cliente non protetta da autenticazione Gemma.");
+}
+
+if (!read("lib/gemma-auth.js").includes("activeAuthSession")) {
+  failures.push("Sessioni Admin/Backoffice non revocabili dal DB.");
+}
+
+if (
+  read("app/api/gemma/admin/faults/route.js").includes("if (!auth(request))") ||
+  read("app/api/gemma/admin/memory/route.js").includes("if (!auth(request))")
+) {
+  failures.push("Autorizzazione Admin asincrona non attesa correttamente.");
+}
+
+if (!read("lib/gemma-no-match.js").includes("knowledgeMode")) {
+  failures.push("I guasti retrieval possono contaminare la vista No Match.");
+}
+
+if (!fs.existsSync("app/api/gemma/admin/knowledge/[id]/route.js")) {
+  failures.push("Editor manuale Knowledge Gemma mancante.");
+}
+
+if (!read("app/admin/knowledge/page.js").includes("saveManualDocument")) {
+  failures.push("UI integrazione manuale Knowledge mancante.");
+}
+
+if (fs.existsSync("lib/gemma-knowledge-sync.js")) {
+  const hardenedSync = read("lib/gemma-knowledge-sync.js");
+  for (const token of [
+    "proposalSafety",
+    "apply_claimed_at",
+    "PREVIEW_READY",
+    "'DRAFT'::\"KnowledgeDocumentStatus\"",
+  ]) {
+    if (!hardenedSync.includes(token)) {
+      failures.push("Protezione Knowledge massiva mancante: " + token);
+    }
+  }
+}
+
+if (!store.includes("GEMMA_ALLOW_DB_ATTACHMENTS")) {
+  failures.push("Manca il blocco storage allegati DB in production.");
+}
+
+if (!fs.existsSync("scripts/migrate-gemma.mjs")) {
+  failures.push("Migrazione controllata schema Gemma mancante.");
+}
+
+if (!store.includes("productionNoAutoMigrate")) {
+  failures.push("Lo schema Gemma esegue ancora DDL automatico in production.");
+}
+
+if (!read("lib/gemma-admin.js").includes("ANY($1::text[])")) {
+  failures.push("Cronologia conversazioni usa ancora query N+1.");
+}
+
+if (!ticketRoute.includes('from "next/server"') || !ticketRoute.includes("after(")) {
+  failures.push("Notifiche ticket ancora bloccanti sulla risposta HTTP.");
+}
+
 if (failures.length) {
   console.error(failures.join("\n"));
   process.exit(1);
