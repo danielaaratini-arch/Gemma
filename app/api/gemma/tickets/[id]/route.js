@@ -5,6 +5,7 @@ import {
   updateTicket,
 } from "../../../../../lib/gemma-store";
 import { notifyTicketStatusChanged } from "../../../../../lib/gemma-notifications";
+import { requireRole } from "../../../../../lib/gemma-auth";
 
 export const runtime = "nodejs";
 
@@ -13,9 +14,16 @@ export async function GET(request, context) {
     const { id } = await context.params;
     const session = customerKeyFromRequest(request);
     const url = new URL(request.url);
-    const staff = url.searchParams.get("scope") === "staff";
+    const staffView = url.searchParams.get("scope") === "staff";
+    const staff = staffView
+      ? requireRole(request, ["ADMIN", "OPERATOR"])
+      : null;
 
-    const ticket = await getTicket(id, staff ? null : session.key);
+    if (staffView && !staff) {
+      return Response.json({ error: "Non autorizzato." }, { status: 401 });
+    }
+
+    const ticket = await getTicket(id, staffView ? null : session.key);
     if (!ticket) {
       return Response.json({ error: "Ticket non trovato." }, { status: 404 });
     }
@@ -33,13 +41,18 @@ export async function GET(request, context) {
 
 export async function PATCH(request, context) {
   try {
+    const staff = requireRole(request, ["ADMIN", "OPERATOR"]);
+    if (!staff) {
+      return Response.json({ error: "Non autorizzato." }, { status: 401 });
+    }
+
     const { id } = await context.params;
     const body = await request.json();
     const before = await getTicket(id, null);
     const ticket = await updateTicket(
       id,
       body || {},
-      body?.actor || "Operatore Demo",
+      staff.name || staff.email || body?.actor || "Operatore",
     );
 
     if (!ticket) {
