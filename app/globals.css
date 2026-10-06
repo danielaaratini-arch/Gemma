@@ -379,3 +379,11 @@ button,input{font:inherit}button{cursor:pointer}
  .conversationAdminGrid{grid-template-columns:1fr}.conversationAdminList{max-height:280px}.knowledgeTableHead,.knowledgeTableRow{grid-template-columns:minmax(220px,1.8fr) 130px 130px 90px 55px}
  .internalUserRow{align-items:flex-start;flex-direction:column}.internalEditGrid{grid-template-columns:1fr}.memorySearch,.knowledgeToolbar{align-items:stretch;flex-direction:column}
 }
+
+
+.ratingCard textarea{width:100%;border:1px solid #cbd5e1;border-radius:11px;padding:9px 10px;resize:vertical;font:inherit;font-size:12px;outline:none}
+.ratingCard textarea:focus{border-color:#10b981;box-shadow:0 0 0 3px rgba(16,185,129,.1)}
+.ratingStars{display:flex;gap:4px;margin-bottom:8px}
+.ratingStars button{border:0;background:transparent;padding:2px;color:#cbd5e1;font-size:24px;line-height:1}
+.ratingStars button.active{color:#f59e0b}
+.ratingThanks{border:1px solid #a7f3d0;border-radius:11px;background:#ecfdf5;padding:10px;color:#047857;font-size:12px;font-weight:750}
